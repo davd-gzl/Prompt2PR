@@ -52,6 +52,7 @@ export default [
           allowDefaultProject: [
             '__fixtures__/*.ts',
             '__tests__/*.ts',
+            '__tests__/providers/*.ts',
             'eslint.config.mjs',
             'jest.config.js',
             'rollup.config.ts'
