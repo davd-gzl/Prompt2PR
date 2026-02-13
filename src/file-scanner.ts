@@ -136,6 +136,7 @@ export async function scanFiles(
   const results: FileContext[] = []
   let excludedBinary = 0
   let excludedDirectory = 0
+  let excludedGitHub = 0
 
   for (const absPath of matchedPaths) {
     // Stat the file — skip directories
@@ -155,6 +156,7 @@ export async function scanFiles(
 
     // Defense-in-depth: double-check .github/ exclusion
     if (relativePath.startsWith('.github/') || relativePath === '.github') {
+      excludedGitHub++
       continue
     }
 
@@ -173,7 +175,8 @@ export async function scanFiles(
   log.info(
     `Scan complete: ${results.length} files loaded, ` +
       `${excludedBinary} binary files skipped, ` +
-      `${excludedDirectory} directories skipped`
+      `${excludedDirectory} directories skipped` +
+      (excludedGitHub > 0 ? `, ${excludedGitHub} .github/ files excluded` : '')
   )
 
   return results

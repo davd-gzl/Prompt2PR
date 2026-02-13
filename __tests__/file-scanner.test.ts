@@ -152,6 +152,34 @@ describe('file-scanner.ts — scanFiles()', () => {
     expect(result[0].path).toBe('src/main.ts')
   })
 
+  it('logs .github/ exclusion count when files are excluded', async () => {
+    const files = [
+      path.join(WORK_DIR, '.github/workflows/ci.yml'),
+      path.join(WORK_DIR, '.github/dependabot.yml'),
+      path.join(WORK_DIR, 'src/main.ts')
+    ]
+    setupGlob(files)
+    setupStat({
+      [files[0]]: { isDir: false, size: 200 },
+      [files[1]]: { isDir: false, size: 100 },
+      [files[2]]: { isDir: false, size: 80 }
+    })
+    setupReadFile({
+      [files[0]]: 'name: CI',
+      [files[1]]: 'version: 2',
+      [files[2]]: 'code here'
+    })
+
+    await scanFiles(['**'], WORK_DIR)
+
+    // Verify the scan summary includes .github/ exclusion count
+    const scanCompleteCall = (core.info as jest.Mock).mock.calls.find((call) =>
+      (call[0] as string).includes('Scan complete')
+    )
+    expect(scanCompleteCall).toBeDefined()
+    expect(scanCompleteCall![0]).toContain('2 .github/ files excluded')
+  })
+
   // -- Glob pattern construction includes .github exclusion ---------------
 
   it('passes negation pattern for .github/** to glob.create', async () => {
