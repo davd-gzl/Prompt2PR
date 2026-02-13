@@ -1,0 +1,99 @@
+name: Prompt2PR
+description: >-
+  A GitHub Action that turns plain-English prompts into Pull Requests using
+  LLMs. Point it at files, describe what to fix, and get an automated PR.
+author: Davphla
+branding:
+  icon: git-pull-request
+  color: purple
+
+inputs:
+  prompt:
+    description: >-
+      The plain-English prompt describing what changes to make. This is sent to
+      the LLM along with the scoped file contents as context.
+    required: true
+
+  provider:
+    description: >-
+      The LLM provider to use. Supported values: mistral, openai, anthropic.
+    required: true
+
+  model:
+    description: >-
+      The model identifier to use. If not specified, the provider's default
+      model is used (e.g., mistral-large-latest, gpt-4o,
+      claude-sonnet-4-20250514).
+    required: false
+    default: ''
+
+  paths:
+    description: >-
+      Comma-separated glob patterns for files to include as LLM context. Only
+      matching files are scanned and eligible for modification.
+    required: false
+    default: '**'
+
+  max_files:
+    description: >-
+      Maximum number of files the LLM is allowed to modify in a single run.
+      Responses exceeding this limit are rejected.
+    required: false
+    default: '10'
+
+  max_changes:
+    description: >-
+      Maximum total lines changed across all files in a single run. Responses
+      exceeding this limit are rejected.
+    required: false
+    default: '200'
+
+  label:
+    description: >-
+      Comma-separated labels to apply to the created PR. The label 'prompt2pr'
+      is always included automatically.
+    required: false
+    default: 'prompt2pr'
+
+  branch_prefix:
+    description: >-
+      Prefix for the branch name created for the PR. The full branch name is
+      {branch_prefix}{timestamp}.
+    required: false
+    default: 'prompt2pr/'
+
+  dry_run:
+    description: >-
+      When set to true, the action runs the full pipeline but skips branch
+      creation and PR submission. Useful for testing prompts.
+    required: false
+    default: 'false'
+
+  base_url:
+    description: >-
+      Override the base URL for the LLM provider API. Useful for proxies or
+      self-hosted endpoints.
+    required: false
+    default: ''
+
+outputs:
+  pr_url:
+    description: The URL of the created Pull Request. Empty if skipped.
+
+  pr_number:
+    description: The number of the created Pull Request. Empty if skipped.
+
+  files_changed:
+    description: The number of files changed by the action.
+
+  lines_changed:
+    description: The total number of lines changed across all files.
+
+  skipped:
+    description: >-
+      Whether PR creation was skipped (true if no changes detected or dry_run
+      was enabled).
+
+runs:
+  using: node20
+  main: dist/index.js
