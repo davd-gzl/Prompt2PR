@@ -1,0 +1,79 @@
+# generated: 2026-02-14
+# project: Prompt2PR
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2026-02-14
+project: Prompt2PR
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+
+development_status:
+  epic-1: in-progress
+  1-1-initialize-project: review
+  1-2-configuration-validation-input-parsing: done
+  1-3-custom-error-types-retry-utility: backlog
+  1-4-logger-with-secret-masking: backlog
+  epic-1-retrospective: optional
+  epic-2: backlog
+  2-1-file-scanner-with-glob-matching: backlog
+  2-2-prompt-assembly-with-context-window-management: backlog
+  epic-2-retrospective: optional
+  epic-3: backlog
+  3-1-provider-interface-factory: backlog
+  3-2-mistral-provider-implementation: backlog
+  3-3-response-parser-json-to-filechanges: backlog
+  3-4-anthropic-provider-implementation: backlog
+  epic-3-retrospective: optional
+  epic-4: backlog
+  4-1-git-manager-branch-stage-commit-push: backlog
+  4-2-pr-creator-github-api-integration: backlog
+  4-3-main-pipeline-end-to-end-orchestration: backlog
+  epic-4-retrospective: optional
+  epic-5: backlog
+  5-1-post-llm-guardrail-enforcement: backlog
+  5-2-pre-llm-file-scope-enforcement: backlog
+  epic-5-retrospective: optional
+  epic-6: backlog
+  6-1-openai-provider-implementation: backlog
+  epic-6-retrospective: optional
+  epic-7: backlog
+  7-1-scheduling-trigger-configuration: backlog
+  7-2-structured-logging-observability: backlog
+  epic-7-retrospective: optional
+  epic-8: backlog
+  8-1-readme-quick-start-config-reference-provider-setup: backlog
+  8-2-example-workflows: backlog
+  8-3-test-coverage-gate-release: backlog
+  epic-8-retrospective: optional
