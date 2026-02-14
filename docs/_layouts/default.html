@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ page.title | default: site.title }}</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.1/github-markdown-light.min.css" />
+    <link
+      rel="stylesheet"
+      href="{{ '/assets/css/style.css' | relative_url }}" />
+    {% seo %}
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-inner">
+        <a href="{{ '/' | relative_url }}" class="site-title">
+          <span class="logo">&#x1F500;</span> {{ site.title }}
+        </a>
+        <p class="site-tagline">{{ site.description }}</p>
+        <nav class="site-nav">
+          {% for item in site.nav %}
+          <a
+            href="{{ item.url | relative_url }}"
+            class="nav-link {% if page.url == item.url %}active{% endif %}"
+            >{{ item.title }}</a
+          >
+          {% endfor %}
+        </nav>
+      </div>
+    </header>
+
+    <div class="page-wrapper">
+      <aside class="sidebar" id="sidebar">
+        <nav class="sidebar-nav">
+          <h3>Guides</h3>
+          <ul>
+            <li>
+              <a href="{{ '/guides/quick-start' | relative_url }}"
+                >Quick Start</a
+              >
+            </li>
+            <li>
+              <a href="{{ '/guides/providers' | relative_url }}"
+                >Provider Setup</a
+              >
+            </li>
+            <li>
+              <a href="{{ '/guides/scheduling' | relative_url }}"
+                >Scheduling & Triggers</a
+              >
+            </li>
+            <li>
+              <a href="{{ '/guides/safety-and-guardrails' | relative_url }}"
+                >Safety & Guardrails</a
+              >
+            </li>
+            <li>
+              <a href="{{ '/guides/faq' | relative_url }}"
+                >FAQ & Troubleshooting</a
+              >
+            </li>
+            <li>
+              <a href="{{ '/guides/contributing' | relative_url }}"
+                >Contributing</a
+              >
+            </li>
+          </ul>
+
+          <h3>Examples</h3>
+          <ul>
+            <li>
+              <a href="{{ '/examples/' | relative_url }}">All Examples</a>
+            </li>
+            <li>
+              <a href="{{ '/examples/documentation' | relative_url }}"
+                >Documentation</a
+              >
+            </li>
+            <li>
+              <a href="{{ '/examples/code-quality' | relative_url }}"
+                >Code Quality</a
+              >
+            </li>
+            <li>
+              <a href="{{ '/examples/security' | relative_url }}">Security</a>
+            </li>
+            <li>
+              <a href="{{ '/examples/testing' | relative_url }}">Testing</a>
+            </li>
+            <li>
+              <a href="{{ '/examples/advanced-triggers' | relative_url }}"
+                >Advanced Triggers</a
+              >
+            </li>
+          </ul>
+
+          <h3>Reference</h3>
+          <ul>
+            <li>
+              <a href="{{ '/reference/configuration' | relative_url }}"
+                >Configuration</a
+              >
+            </li>
+            <li>
+              <a href="{{ '/reference/outputs' | relative_url }}">Outputs</a>
+            </li>
+            <li>
+              <a href="{{ '/reference/architecture' | relative_url }}"
+                >Architecture</a
+              >
+            </li>
+            <li>
+              <a href="{{ '/reference/vision-and-roadmap' | relative_url }}"
+                >Vision & Roadmap</a
+              >
+            </li>
+          </ul>
+        </nav>
+      </aside>
+
+      <main class="main-content markdown-body">{{ content }}</main>
+    </div>
+
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <p>
+          <a href="https://github.com/davd-gzl/Prompt2PR">GitHub</a> &middot;
+          <a href="https://github.com/marketplace/actions/prompt2pr"
+            >Marketplace</a
+          >
+          &middot; MIT License
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,38 @@
+title: Prompt2PR
+description: >-
+  Turn plain-English prompts into automated Pull Requests using LLMs. A GitHub
+  Action for scheduled, AI-driven repository maintenance.
+baseurl: '/Prompt2PR'
+url: 'https://davd-gzl.github.io'
+
+remote_theme: pages-themes/cayman@v0.2.0
+plugins:
+  - jekyll-remote-theme
+  - jekyll-seo-tag
+
+defaults:
+  - scope:
+      path: ''
+    values:
+      layout: 'default'
+
+# Navigation structure
+nav:
+  - title: Home
+    url: /
+  - title: Quick Start
+    url: /guides/quick-start
+  - title: Configuration
+    url: /reference/configuration
+  - title: Providers
+    url: /guides/providers
+  - title: Examples
+    url: /examples/
+  - title: Architecture
+    url: /reference/architecture
+  - title: Vision & Roadmap
+    url: /reference/vision-and-roadmap
+  - title: FAQ
+    url: /guides/faq
+  - title: Contributing
+    url: /guides/contributing
