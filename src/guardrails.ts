@@ -10,6 +10,8 @@
 
 import * as path from 'node:path'
 
+import picomatch from 'picomatch'
+
 import type { ActionConfig } from './config.js'
 import { GuardrailError } from './errors.js'
 import { createLogger } from './logger.js'
@@ -22,9 +24,18 @@ import type { FileChange } from './providers/types.js'
 const log = createLogger('guardrails')
 
 /**
- * Count the total number of lines changed across all file changes.
- * For creates/modifies, count the number of lines in the new content.
- * For deletes, count as 1 change (the deletion itself).
+ * Count the total number of output lines across all file changes.
+ *
+ * **Important:** This counts the total line count of the new file content,
+ * NOT the number of lines that differ from the original. A one-line edit to
+ * a 500-line file counts as 500 lines. This is because the LLM returns full
+ * file content, not diffs, so we cannot compute a true diff without the
+ * original file contents (which are not passed through to this layer).
+ *
+ * For deletes, each deletion counts as 1 change (the deletion itself).
+ *
+ * @param changes - The file changes to measure.
+ * @returns Total output line count across all changes.
  */
 export function countLinesChanged(changes: FileChange[]): number {
   let total = 0
@@ -41,44 +52,17 @@ export function countLinesChanged(changes: FileChange[]): number {
 }
 
 /**
- * Convert a simple glob pattern to a RegExp.
- * Supports `**` (match any path), `*` (match within segment), and `?` (match one char).
- */
-function globToRegExp(pattern: string): RegExp {
-  let regexStr = '^'
-  let i = 0
-  while (i < pattern.length) {
-    const char = pattern[i]
-    if (char === '*' && pattern[i + 1] === '*') {
-      // ** matches any path segments
-      regexStr += '.*'
-      i += 2
-      // Skip trailing slash after **
-      if (pattern[i] === '/') i++
-    } else if (char === '*') {
-      // * matches anything except /
-      regexStr += '[^/]*'
-      i++
-    } else if (char === '?') {
-      regexStr += '[^/]'
-      i++
-    } else if (char === '.') {
-      regexStr += '\\.'
-      i++
-    } else {
-      regexStr += char
-      i++
-    }
-  }
-  regexStr += '$'
-  return new RegExp(regexStr)
-}
-
-/**
  * Check if a file path matches any of the configured glob patterns.
+ *
+ * Uses `picomatch` for correct handling of brace expansion, character classes,
+ * extglobs, and edge cases that the previous homebrew `globToRegExp` missed.
+ * Dot-files are matched by default since repository paths frequently include
+ * them (e.g. `.eslintrc.json`).
  */
 function matchesPatterns(filePath: string, patterns: string[]): boolean {
-  return patterns.some((pattern) => globToRegExp(pattern).test(filePath))
+  return patterns.some((pattern) =>
+    picomatch.isMatch(filePath, pattern, { dot: true })
+  )
 }
 
 // ---------------------------------------------------------------------------

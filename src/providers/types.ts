@@ -48,7 +48,14 @@ export interface FileChange {
  * The parsed response from an LLM provider.
  */
 export interface LLMResponse {
-  /** The file changes proposed by the LLM. Empty = no changes. */
+  /**
+   * The file changes proposed by the LLM. Empty = no changes.
+   *
+   * **Warning:** Entries are structurally unvalidated at this stage — providers
+   * cast the JSON payload to `FileChange[]` without per-entry validation.
+   * Consumers MUST pass these through `parseResponse()` (in `response-parser.ts`)
+   * before using them, to ensure `path`, `content`, and `action` are valid.
+   */
   files: FileChange[]
   /** Optional AI-generated narrative summary of changes (FR21). */
   summary?: string

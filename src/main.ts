@@ -97,7 +97,7 @@ export async function run(): Promise<void> {
       core.setOutput('pr_number', '')
       core.setOutput('files_changed', '0')
       core.setOutput('lines_changed', '0')
-      core.setOutput('skipped', 'true')
+      core.setOutput('skipped', 'no_changes')
       return
     }
 
@@ -116,7 +116,7 @@ export async function run(): Promise<void> {
       core.setOutput('pr_number', '')
       core.setOutput('files_changed', String(validated.length))
       core.setOutput('lines_changed', String(linesChanged))
-      core.setOutput('skipped', 'true')
+      core.setOutput('skipped', 'dry_run')
       return
     }
 

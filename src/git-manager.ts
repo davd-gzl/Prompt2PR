@@ -154,9 +154,22 @@ export async function commitAndPush(
   await applyChanges(changes, workDir)
 
   // Stage all changed files
-  const filePaths = changes.map((c) => c.path)
-  log.info(`Staging ${filePaths.length} file(s)`)
-  await git(['add', ...filePaths], workDir)
+  const deletedPaths = changes
+    .filter((c) => c.action === 'delete')
+    .map((c) => c.path)
+  const addedOrModifiedPaths = changes
+    .filter((c) => c.action !== 'delete')
+    .map((c) => c.path)
+
+  if (addedOrModifiedPaths.length > 0) {
+    log.info(`Staging ${addedOrModifiedPaths.length} added/modified file(s)`)
+    await git(['add', ...addedOrModifiedPaths], workDir)
+  }
+
+  if (deletedPaths.length > 0) {
+    log.info(`Staging ${deletedPaths.length} deleted file(s)`)
+    await git(['rm', ...deletedPaths], workDir)
+  }
 
   // Commit
   log.info(`Committing: ${commitMessage}`)

@@ -187,7 +187,7 @@ describe('main.ts — run()', () => {
     expect(mockCreatePullRequest).not.toHaveBeenCalled()
 
     // Outputs should indicate skip
-    expect(core.setOutput).toHaveBeenCalledWith('skipped', 'true')
+    expect(core.setOutput).toHaveBeenCalledWith('skipped', 'no_changes')
     expect(core.setOutput).toHaveBeenCalledWith('pr_url', '')
     expect(core.setOutput).toHaveBeenCalledWith('pr_number', '')
     expect(core.setOutput).toHaveBeenCalledWith('files_changed', '0')
@@ -229,7 +229,7 @@ describe('main.ts — run()', () => {
     expect(mockCreatePullRequest).not.toHaveBeenCalled()
 
     // Outputs should indicate skip
-    expect(core.setOutput).toHaveBeenCalledWith('skipped', 'true')
+    expect(core.setOutput).toHaveBeenCalledWith('skipped', 'dry_run')
     expect(core.setFailed).not.toHaveBeenCalled()
   })
 
