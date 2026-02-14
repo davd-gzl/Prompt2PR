@@ -4,64 +4,8 @@
 [![Coverage](./badges/coverage.svg)](./badges/coverage.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-> **Cron jobs, but the job description is a prompt.**
->
-> A GitHub Action that turns plain-English prompts into automated Pull Requests
-> using LLMs. Point it at files, describe what to fix, and get an automated PR —
-> on a schedule or on-demand.
-
-**[Documentation](https://davd-gzl.github.io/Prompt2PR)** ·
-**[Examples](https://davd-gzl.github.io/Prompt2PR/examples/)** ·
-**[Marketplace](https://github.com/marketplace/actions/prompt2pr)**
-
----
-
-## Table of Contents
-
-- [Why Prompt2PR?](#why-prompt2pr)
-- [Quick Start](#quick-start)
-- [How It Works](#how-it-works)
-- [Configuration](#configuration)
-  - [Inputs](#inputs)
-  - [Default Models](#default-models)
-  - [Outputs](#outputs)
-  - [Using Outputs](#using-outputs-in-downstream-steps)
-- [Provider Setup](#provider-setup)
-  - [Mistral](#mistral)
-  - [OpenAI](#openai)
-  - [Anthropic](#anthropic)
-  - [GitHub Models](#github-models)
-- [Scheduling](#scheduling)
-- [Safety & Guardrails](#safety--guardrails)
-- [Examples](#examples)
-  - [Documentation & Content](#documentation--content)
-  - [Code Quality & Maintenance](#code-quality--maintenance)
-  - [Security](#security)
-  - [Testing](#testing)
-  - [Advanced Triggers](#advanced-triggers)
-- [FAQ / Troubleshooting](#faq--troubleshooting)
-- [Contributing](#contributing)
-- [License](#license)
-
----
-
-## Why Prompt2PR?
-
-Repositories accumulate **silent rot** — dead links, stale docs, outdated
-copyright years, deprecated APIs, resolved TODOs. These tasks are small,
-repetitive, and nobody owns them.
-
-Prompt2PR automates them. Describe the fix in plain English, set a schedule, and
-forget about it.
-
-| Feature                 | Description                                                                                |
-| ----------------------- | ------------------------------------------------------------------------------------------ |
-| **Natural Language**    | Write prompts in plain English — no scripting required                                     |
-| **Set & Forget**        | Schedule with cron. Get PRs when needed, silence when not                                  |
-| **Safe by Design**      | Guardrails limit changes. `.github/` always protected. Every change goes through PR review |
-| **Multi-Provider**      | Mistral, OpenAI, Anthropic, and GitHub Models out of the box                               |
-| **Traceable PRs**       | Every PR includes the original prompt, AI summary, and run metadata                        |
-| **Zero Infrastructure** | Runs on GitHub Actions. No servers, no Docker, no SaaS                                     |
+> A GitHub Action that turns plain-English prompts into Pull Requests using
+> LLMs. Point it at files, describe what to fix, and get an automated PR.
 
 ---
 
@@ -70,8 +14,8 @@ forget about it.
 Get a working Prompt2PR workflow in under 5 minutes:
 
 1. **Get an API key** from your LLM provider (see
-   [Provider Setup](#provider-setup) below), or skip this step with
-   [GitHub Models](#github-models).
+   [Provider Setup](#provider-setup) below), or use
+   [GitHub Models](#github-models) with no extra key.
 1. **Add the key as a GitHub Secret** in your repository under _Settings →
    Secrets and variables → Actions_ (e.g., `MISTRAL_API_KEY`).
 1. **Create a workflow file** at `.github/workflows/prompt2pr.yml`:
@@ -79,14 +23,11 @@ Get a working Prompt2PR workflow in under 5 minutes:
 ```yaml
 name: Prompt2PR
 on:
-  schedule:
-    - cron: '0 9 * * 1' # Every Monday at 9:00 UTC
   workflow_dispatch:
     inputs:
       prompt:
         description: 'What should the AI fix?'
-        required: false
-        default: ''
+        required: true
 
 permissions:
   contents: write
@@ -99,62 +40,34 @@ jobs:
       - uses: actions/checkout@v4
       - uses: davd-gzl/Prompt2PR@v1
         with:
-          prompt: >-
-            ${{ github.event.inputs.prompt || 'Scan all markdown files for
-            broken links. Fix or remove any dead links you find.' }}
+          prompt: ${{ github.event.inputs.prompt }}
           provider: mistral
-          paths: '**/*.md'
         env:
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 4. **Trigger the workflow** from the _Actions_ tab → _Prompt2PR_ → _Run
-   workflow_, or wait for the next scheduled run.
+   workflow_, enter your prompt, and watch the PR appear.
 
 ---
 
-## How It Works
-
-```
- ┌──────────────┐    ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
- │  1. Scan     │───▶│  2. Prompt   │───▶│  3. LLM      │───▶│  4. PR       │
- │  files       │    │  + context   │    │  response     │    │  created     │
- └──────────────┘    └──────────────┘    └──────────────┘    └──────────────┘
-  Match paths glob    Build prompt with    Parse changes,      Create branch,
-  Read file contents  file contents as     validate against    commit, push,
-  Exclude .github/    context (200K max)   guardrails          open PR
-```
-
-1. **Scans** files matching your `paths` glob patterns
-2. **Builds** a prompt with file contents as context (200K char budget,
-   auto-truncation)
-3. **Sends** the prompt to the configured LLM and parses the response
-4. **Validates** changes against guardrails (`max_files`, `max_changes`, `paths`
-   scope)
-5. **Creates a PR** with the prompt quoted, AI summary, and run metadata — or
-   stays silent if nothing needs fixing
-
----
-
-## Configuration
-
-### Inputs
+## Inputs
 
 All inputs are configured via the standard GitHub Actions `with:` syntax.
 
 | Input           | Required | Default       | Description                                                                                            |
 | --------------- | -------- | ------------- | ------------------------------------------------------------------------------------------------------ |
 | `prompt`        | **yes**  | —             | Plain-English prompt describing what changes to make. Sent to the LLM along with scoped file contents. |
-| `provider`      | **yes**  | —             | LLM provider: `mistral`, `openai`, `anthropic`, or `github`.                                           |
+| `provider`      | **yes**  | —             | LLM provider to use: `mistral`, `openai`, `anthropic`, or `github`.                                    |
 | `model`         | no       | _(see below)_ | Model identifier. If omitted, the provider's default model is used.                                    |
 | `paths`         | no       | `**`          | Comma-separated glob patterns for files to include as context and allow modifications.                 |
-| `max_files`     | no       | `10`          | Maximum number of files the LLM may modify per run. Exceeding this rejects the entire response.        |
-| `max_changes`   | no       | `200`         | Maximum total lines changed across all files per run.                                                  |
+| `max_files`     | no       | `10`          | Maximum number of files the LLM may modify in a single run.                                            |
+| `max_changes`   | no       | `200`         | Maximum total lines changed across all files in a single run.                                          |
 | `label`         | no       | `prompt2pr`   | Comma-separated labels to apply to the PR. `prompt2pr` is always included.                             |
-| `branch_prefix` | no       | `prompt2pr/`  | Prefix for the created branch name. Full name: `{prefix}{timestamp}`.                                  |
-| `dry_run`       | no       | `false`       | Run the full pipeline but skip branch creation and PR submission.                                      |
-| `base_url`      | no       | _(empty)_     | Override the LLM provider API base URL (for proxies or self-hosted endpoints).                         |
+| `branch_prefix` | no       | `prompt2pr/`  | Prefix for the created branch name.                                                                    |
+| `dry_run`       | no       | `false`       | When `true`, runs the full pipeline but skips branch creation and PR submission.                       |
+| `base_url`      | no       | _(empty)_     | Override the LLM provider API base URL (useful for proxies or self-hosted endpoints).                  |
 
 ### Default Models
 
@@ -165,57 +78,32 @@ All inputs are configured via the standard GitHub Actions `with:` syntax.
 | `anthropic` | `claude-sonnet-4-20250514` |
 | `github`    | `openai/gpt-4o`            |
 
-### Outputs
+---
 
-Prompt2PR provides 5 outputs for use in downstream workflow steps:
+## Outputs
 
-| Output          | Type     | Description                                                             | When Set                 |
-| --------------- | -------- | ----------------------------------------------------------------------- | ------------------------ |
-| `pr_url`        | `string` | URL of the created PR (e.g., `https://github.com/.../pull/42`)          | PR created               |
-| `pr_number`     | `string` | Number of the created PR (e.g., `42`)                                   | PR created               |
-| `files_changed` | `string` | Number of files changed (e.g., `3`)                                     | Always (even in dry-run) |
-| `lines_changed` | `string` | Total lines changed across all files (e.g., `47`)                       | Always (even in dry-run) |
-| `skipped`       | `string` | `"true"` if PR was skipped (no changes or dry-run), `"false"` otherwise | Always                   |
+| Output          | Description                                                         |
+| --------------- | ------------------------------------------------------------------- |
+| `pr_url`        | URL of the created Pull Request. Empty if skipped.                  |
+| `pr_number`     | Number of the created Pull Request. Empty if skipped.               |
+| `files_changed` | Number of files changed by the action.                              |
+| `lines_changed` | Total lines changed across all files.                               |
+| `skipped`       | `true` if PR creation was skipped (no changes detected or dry run). |
 
-#### Output Decision Flow
-
-```
-LLM returns changes?
-├── NO  → skipped="true", files_changed="0", pr_url=""
-└── YES → Guardrails pass?
-          ├── NO  → Action FAILS (error, no outputs)
-          └── YES → dry_run?
-                    ├── YES → skipped="true", files_changed="N", pr_url=""
-                    └── NO  → PR created! skipped="false", pr_url="https://..."
-```
-
-### Using Outputs in Downstream Steps
-
-Give the Prompt2PR step an `id`, then reference its outputs:
+Use outputs in downstream steps:
 
 ```yaml
-steps:
-  - uses: actions/checkout@v4
+- uses: davd-gzl/Prompt2PR@v1
+  id: prompt2pr
+  with:
+    prompt: 'Fix all dead links in markdown files'
+    provider: mistral
+  env:
+    MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  - uses: davd-gzl/Prompt2PR@v1
-    id: prompt2pr
-    with:
-      prompt: 'Fix all dead links in markdown files'
-      provider: mistral
-    env:
-      MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  - name: Report results
-    if: steps.prompt2pr.outputs.skipped != 'true'
-    run: |
-      echo "PR created: ${{ steps.prompt2pr.outputs.pr_url }}"
-      echo "Files changed: ${{ steps.prompt2pr.outputs.files_changed }}"
-      echo "Lines changed: ${{ steps.prompt2pr.outputs.lines_changed }}"
-
-  - name: Nothing to fix
-    if: steps.prompt2pr.outputs.skipped == 'true'
-    run: echo "No changes needed — everything looks clean!"
+- run: echo "PR created at ${{ steps.prompt2pr.outputs.pr_url }}"
+  if: steps.prompt2pr.outputs.skipped != 'true'
 ```
 
 ---
@@ -246,15 +134,16 @@ steps:
 
 ### GitHub Models
 
-Use LLMs directly through GitHub's built-in Models API — **no external API key
-needed**. Works with any GitHub Copilot subscription.
+Use LLMs directly through GitHub's built-in Models API — no external API key
+needed. This works with any GitHub Copilot subscription.
 
 1. Ensure your GitHub account has access to
    [GitHub Models](https://github.com/marketplace/models).
-1. No additional secrets required — the built-in `GITHUB_TOKEN` is used.
+1. No additional secrets required — the built-in `GITHUB_TOKEN` is used for
+   authentication.
 1. Add `models: read` to your workflow permissions.
 1. Set `provider: github` and use models in `publisher/model-name` format (e.g.,
-   `openai/gpt-4o`).
+   `openai/gpt-4o`, `anthropic/claude-sonnet-4.5`).
 
 ```yaml
 permissions:
@@ -285,13 +174,18 @@ Prompt2PR works with any GitHub Actions trigger. Common patterns:
 
 ### Cron Schedule
 
+Run automatically on a recurring schedule:
+
 ```yaml
 on:
   schedule:
-    - cron: '0 9 * * 1' # Every Monday at 9:00 UTC
+    # Every Monday at 9:00 UTC
+    - cron: '0 9 * * 1'
 ```
 
 ### Manual Trigger
+
+Run on demand from the Actions tab:
 
 ```yaml
 on:
@@ -302,7 +196,9 @@ on:
         required: true
 ```
 
-### Schedule + Manual (Recommended)
+### Both
+
+Combine a schedule with a manual override:
 
 ```yaml
 on:
@@ -314,21 +210,7 @@ on:
         description: 'Custom prompt (optional)'
         required: false
         default: ''
-
-  # In the step:
-  with:
-    prompt: >-
-      ${{ github.event.inputs.prompt || 'Your default prompt here.' }}
 ```
-
-### Common Schedules
-
-| Schedule        | Cron        | Use Case                  |
-| --------------- | ----------- | ------------------------- |
-| Weekly (Monday) | `0 9 * * 1` | Link checks, TODO cleanup |
-| Daily           | `0 3 * * *` | Secret scanning           |
-| Monthly (1st)   | `0 8 1 * *` | Deprecation cleanup       |
-| Yearly (Jan 2)  | `0 6 2 1 *` | Copyright updates         |
 
 ---
 
@@ -348,49 +230,24 @@ on:
 
 ## Examples
 
-Ready-to-use workflow files in the [`examples/`](examples/) directory, organized
-by category. Copy any file to `.github/workflows/` in your repository.
+Ready-to-use workflow files are in the [`examples/`](examples/) directory. Copy
+any file to `.github/workflows/` in your repository:
 
-> **Full documentation for each example:**
-> [davd-gzl.github.io/Prompt2PR/examples](https://davd-gzl.github.io/Prompt2PR/examples/)
-
-### Documentation & Content
-
-| Example                                                 | Description                                       | Provider  | Trigger     |
-| ------------------------------------------------------- | ------------------------------------------------- | --------- | ----------- |
-| [`fix-dead-links.yml`](examples/fix-dead-links.yml)     | Scan Markdown for broken links and fix them       | Mistral   | Weekly cron |
-| [`sync-readme.yml`](examples/sync-readme.yml)           | Keep README in sync with actual source code       | OpenAI    | Weekly cron |
-| [`translate-docs.yml`](examples/translate-docs.yml)     | Translate documentation into another language     | Anthropic | Manual      |
-| [`update-copyright.yml`](examples/update-copyright.yml) | Update copyright year in source and license files | Anthropic | Yearly cron |
-
-### Code Quality & Maintenance
-
-| Example                                                       | Description                                      | Provider      | Trigger      |
-| ------------------------------------------------------------- | ------------------------------------------------ | ------------- | ------------ |
-| [`cleanup-todos.yml`](examples/cleanup-todos.yml)             | Clean up resolved TODO/FIXME/HACK comments       | Anthropic     | Weekly cron  |
-| [`enforce-style-guide.yml`](examples/enforce-style-guide.yml) | Check and fix code style guide violations        | GitHub Models | Push to main |
-| [`deprecation-cleanup.yml`](examples/deprecation-cleanup.yml) | Replace deprecated APIs with modern alternatives | Anthropic     | Monthly cron |
-| [`add-error-handling.yml`](examples/add-error-handling.yml)   | Add missing try/catch and input validation       | Mistral       | Manual       |
-| [`improve-logging.yml`](examples/improve-logging.yml)         | Replace console.log with structured logging      | OpenAI        | Manual       |
-
-### Security
-
-| Example                                         | Description                                     | Provider | Trigger    |
-| ----------------------------------------------- | ----------------------------------------------- | -------- | ---------- |
-| [`scan-secrets.yml`](examples/scan-secrets.yml) | Detect accidentally committed secrets or tokens | Mistral  | Daily cron |
-
-### Testing
-
-| Example                                             | Description                                | Provider | Trigger     |
-| --------------------------------------------------- | ------------------------------------------ | -------- | ----------- |
-| [`generate-tests.yml`](examples/generate-tests.yml) | Generate unit tests for untested functions | OpenAI   | Weekly cron |
-
-### Advanced Triggers
-
-| Example                                                 | Description                                       | Provider      | Trigger       |
-| ------------------------------------------------------- | ------------------------------------------------- | ------------- | ------------- |
-| [`dry-run-audit.yml`](examples/dry-run-audit.yml)       | Preview changes without creating a PR (`dry_run`) | GitHub Models | Manual        |
-| [`on-issue-comment.yml`](examples/on-issue-comment.yml) | Trigger via `/prompt2pr` comment on issues        | GitHub Models | Issue comment |
+| Example                                                       | Description                                       | Provider  | Trigger       |
+| ------------------------------------------------------------- | ------------------------------------------------- | --------- | ------------- |
+| [`fix-dead-links.yml`](examples/fix-dead-links.yml)           | Scan Markdown for broken links and fix them       | Mistral   | Weekly cron   |
+| [`update-copyright.yml`](examples/update-copyright.yml)       | Update copyright year in source and license files | Anthropic | Yearly cron   |
+| [`sync-readme.yml`](examples/sync-readme.yml)                 | Keep readme in sync with actual source code       | OpenAI    | Weekly cron   |
+| [`scan-secrets.yml`](examples/scan-secrets.yml)               | Detect accidentally committed secrets or tokens   | Mistral   | Daily cron    |
+| [`cleanup-todos.yml`](examples/cleanup-todos.yml)             | Clean up resolved TODO/FIXME/HACK comments        | Anthropic | Weekly cron   |
+| [`enforce-style-guide.yml`](examples/enforce-style-guide.yml) | Check and fix code style guide violations         | GitHub    | Push to main  |
+| [`generate-tests.yml`](examples/generate-tests.yml)           | Generate unit tests for untested functions        | OpenAI    | Weekly cron   |
+| [`translate-docs.yml`](examples/translate-docs.yml)           | Translate documentation into another language     | Anthropic | Manual        |
+| [`add-error-handling.yml`](examples/add-error-handling.yml)   | Add missing try/catch and input validation        | Mistral   | Manual        |
+| [`dry-run-audit.yml`](examples/dry-run-audit.yml)             | Preview changes without creating a PR (`dry_run`) | GitHub    | Manual        |
+| [`improve-logging.yml`](examples/improve-logging.yml)         | Replace console.log with structured logging       | OpenAI    | Manual        |
+| [`deprecation-cleanup.yml`](examples/deprecation-cleanup.yml) | Replace deprecated APIs with modern alternatives  | Anthropic | Monthly cron  |
+| [`on-issue-comment.yml`](examples/on-issue-comment.yml)       | Trigger via `/prompt2pr` comment on issues        | GitHub    | Issue comment |
 
 ---
 

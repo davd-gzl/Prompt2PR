@@ -75,18 +75,3 @@ jobs:
 - Exclude test fixtures by adjusting `paths`:
   `src/**,config/**,!**/__fixtures__/**`
 - Lower `max_changes` if you want smaller, more focused PRs
-
----
-
-## Combining with Other Security Tools
-
-Prompt2PR's secret scanning complements (not replaces) dedicated tools like:
-
-| Tool                       | Strength                            | Prompt2PR's Addition                                      |
-| -------------------------- | ----------------------------------- | --------------------------------------------------------- |
-| **GitHub Secret Scanning** | Detects known patterns, alerts      | Prompt2PR **fixes** the issue, not just alerts            |
-| **Gitleaks**               | Comprehensive regex-based detection | Prompt2PR provides context-aware, intelligent replacement |
-| **TruffleHog**             | Git history scanning                | Prompt2PR focuses on current state and auto-remediates    |
-
-Use Prompt2PR alongside these tools for defense in depth — automated detection
-plus automated remediation.

@@ -1,7 +1,5 @@
 :root {
-  --color-primary: #6f42c1;
-  --color-primary-light: #8b5cf6;
-  --color-primary-dark: #5a32a3;
+  --color-primary: #24292f;
   --color-bg: #ffffff;
   --color-bg-secondary: #f6f8fa;
   --color-text: #24292f;
@@ -9,7 +7,6 @@
   --color-border: #d0d7de;
   --color-link: #0969da;
   --sidebar-width: 260px;
-  --header-height: auto;
 }
 
 * {
@@ -29,13 +26,9 @@ body {
 
 /* Header */
 .site-header {
-  background: linear-gradient(
-    135deg,
-    var(--color-primary),
-    var(--color-primary-light)
-  );
+  background: var(--color-primary);
   color: white;
-  padding: 2rem 2rem 1.5rem;
+  padding: 1.5rem 2rem 1rem;
   text-align: center;
 }
 
@@ -47,20 +40,20 @@ body {
 .site-title {
   color: white;
   text-decoration: none;
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 700;
   display: inline-block;
 }
 
 .site-title .logo {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   margin-right: 0.25rem;
 }
 
 .site-tagline {
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 1rem;
-  margin: 0.5rem 0 1rem;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.9rem;
+  margin: 0.25rem 0 0.75rem;
   max-width: 600px;
   margin-left: auto;
   margin-right: auto;
@@ -75,18 +68,18 @@ body {
 }
 
 .nav-link {
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.85);
   text-decoration: none;
-  padding: 0.4rem 0.8rem;
-  border-radius: 6px;
-  font-size: 0.875rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
   font-weight: 500;
   transition: background 0.2s;
 }
 
 .nav-link:hover,
 .nav-link.active {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.15);
   color: white;
 }
 
@@ -95,7 +88,7 @@ body {
   display: flex;
   max-width: 1200px;
   margin: 0 auto;
-  min-height: calc(100vh - 300px);
+  min-height: calc(100vh - 250px);
 }
 
 /* Sidebar */
@@ -157,7 +150,7 @@ body {
 .main-content h1:first-child {
   margin-top: 0;
   padding-bottom: 0.5rem;
-  border-bottom: 2px solid var(--color-primary);
+  border-bottom: 1px solid var(--color-border);
 }
 
 /* Footer */
@@ -177,93 +170,6 @@ body {
 
 .site-footer a:hover {
   text-decoration: underline;
-}
-
-/* Feature Cards (for index page) */
-.feature-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.25rem;
-  margin: 1.5rem 0;
-}
-
-.feature-card {
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 1.25rem;
-  background: var(--color-bg-secondary);
-}
-
-.feature-card h3 {
-  margin-top: 0;
-  font-size: 1rem;
-  border: none;
-}
-
-.feature-card p {
-  margin: 0.5rem 0 0;
-  font-size: 0.9rem;
-  color: var(--color-text-light);
-}
-
-/* Example Cards */
-.example-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1rem;
-  margin: 1.5rem 0;
-}
-
-.example-card {
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 1rem 1.25rem;
-  background: var(--color-bg);
-  transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
-}
-
-.example-card:hover {
-  border-color: var(--color-primary-light);
-  box-shadow: 0 2px 8px rgba(111, 66, 193, 0.1);
-}
-
-.example-card h4 {
-  margin-top: 0;
-  font-size: 0.95rem;
-}
-
-.example-card p {
-  font-size: 0.85rem;
-  color: var(--color-text-light);
-  margin: 0.25rem 0;
-}
-
-.example-card .meta {
-  display: flex;
-  gap: 0.75rem;
-  font-size: 0.8rem;
-  color: var(--color-text-light);
-  margin-top: 0.5rem;
-}
-
-.badge {
-  display: inline-block;
-  padding: 0.15rem 0.5rem;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.badge-provider {
-  background: #ddf4ff;
-  color: #0969da;
-}
-
-.badge-trigger {
-  background: #dafbe1;
-  color: #1a7f37;
 }
 
 /* Responsive */

@@ -22,9 +22,6 @@ stored as a GitHub Secret.
 
 ## Mistral
 
-Mistral offers a generous free tier and fast inference, making it a great
-default choice.
-
 ### Setup
 
 1. Sign up at [console.mistral.ai](https://console.mistral.ai/)
