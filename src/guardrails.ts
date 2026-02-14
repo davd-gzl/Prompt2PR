@@ -8,6 +8,8 @@
  * @see _bmad-output/planning-artifacts/epics.md#Story 5.1
  */
 
+import * as path from 'node:path'
+
 import type { ActionConfig } from './config.js'
 import { GuardrailError } from './errors.js'
 import { createLogger } from './logger.js'
@@ -24,7 +26,7 @@ const log = createLogger('guardrails')
  * For creates/modifies, count the number of lines in the new content.
  * For deletes, count as 1 change (the deletion itself).
  */
-function countLinesChanged(changes: FileChange[]): number {
+export function countLinesChanged(changes: FileChange[]): number {
   let total = 0
   for (const change of changes) {
     if (change.action === 'delete') {
@@ -102,6 +104,27 @@ export function validateChanges(
   config: ActionConfig
 ): FileChange[] {
   log.info(`Validating ${changes.length} file change(s) against guardrails`)
+
+  // --- Check path traversal (security) ---
+  for (const change of changes) {
+    // Reject absolute paths
+    if (path.isAbsolute(change.path)) {
+      throw new GuardrailError(
+        `File '${change.path}' is an absolute path. ` +
+          `All file paths must be relative to the repository root.`
+      )
+    }
+
+    // Reject paths containing '..' segments (directory traversal)
+    const normalized = path.normalize(change.path)
+    const segments = normalized.split(/[/\\]/)
+    if (segments.includes('..')) {
+      throw new GuardrailError(
+        `File '${change.path}' contains path traversal ('..') and would escape the repository root. ` +
+          `All file paths must resolve within the repository.`
+      )
+    }
+  }
 
   // --- Check .github/ exclusion (FR31) ---
   for (const change of changes) {

@@ -146,6 +146,17 @@ describe('git-manager.ts — applyChanges()', () => {
 
     await expect(applyChanges(changes, '/repo')).rejects.toThrow(GitError)
   })
+
+  it('throws GitError for path traversal attempts (defense-in-depth)', async () => {
+    const changes: FileChange[] = [
+      { path: '../../etc/passwd', content: 'malicious', action: 'create' }
+    ]
+
+    await expect(applyChanges(changes, '/repo')).rejects.toThrow(GitError)
+    await expect(applyChanges(changes, '/repo')).rejects.toThrow(
+      /Path traversal detected/
+    )
+  })
 })
 
 describe('git-manager.ts — commitAndPush()', () => {
