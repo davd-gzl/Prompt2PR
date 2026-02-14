@@ -1,0 +1,56 @@
+# Accessibility Audit — Prompt2PR Example Workflow
+#
+# Scans HTML, JSX, and TSX files for accessibility issues and fixes them.
+# Checks for missing alt text, ARIA labels, semantic HTML, keyboard navigation,
+# and color contrast concerns. LLMs excel here because they understand the
+# semantic meaning of UI elements and can suggest context-appropriate fixes.
+#
+# Setup:
+#   1. Copy this file to .github/workflows/accessibility-audit.yml
+#   2. Set your LLM provider API key as a GitHub Secret
+#   3. Adjust the paths to match your frontend source directories
+
+name: Accessibility Audit
+
+on:
+  schedule:
+    # Run every Tuesday at 8:00 UTC
+    - cron: '0 8 * * 2'
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: 'Custom prompt (optional — overrides default)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  a11y-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: davd-gzl/Prompt2PR@v1
+        with:
+          prompt: >-
+            ${{ github.event.inputs.prompt || 'Audit all frontend files for
+            accessibility (a11y) issues. For each issue found: (1) Add missing
+            alt attributes to images — use descriptive text based on the
+            surrounding context, not generic placeholders. (2) Add aria-label or
+            aria-labelledby to interactive elements (buttons, inputs, links)
+            that lack visible text labels. (3) Replace non-semantic elements
+            (div with onClick) with proper semantic HTML (button, a, nav, etc.).
+            (4) Ensure form inputs have associated label elements. (5) Add role
+            attributes where appropriate. Do not change styling or application
+            logic.' }}
+          provider: 'anthropic'
+          paths: 'src/**/*.{html,jsx,tsx},components/**/*.{jsx,tsx},pages/**/*.{jsx,tsx}'
+          max_files: 10
+          max_changes: 200
+          label: 'prompt2pr,accessibility'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

@@ -55,18 +55,18 @@ jobs:
 
 All inputs are configured via the standard GitHub Actions `with:` syntax.
 
-| Input           | Required | Default       | Description                                                                                            |
-| --------------- | -------- | ------------- | ------------------------------------------------------------------------------------------------------ |
-| `prompt`        | **yes**  | —             | Plain-English prompt describing what changes to make. Sent to the LLM along with scoped file contents. |
-| `provider`      | **yes**  | —             | LLM provider to use: `mistral`, `openai`, `anthropic`, or `github`.                                    |
-| `model`         | no       | _(see below)_ | Model identifier. If omitted, the provider's default model is used.                                    |
-| `paths`         | no       | `**`          | Comma-separated glob patterns for files to include as context and allow modifications.                 |
-| `max_files`     | no       | `10`          | Maximum number of files the LLM may modify in a single run.                                            |
-| `max_changes`   | no       | `200`         | Maximum total lines changed across all files in a single run.                                          |
-| `label`         | no       | `prompt2pr`   | Comma-separated labels to apply to the PR. `prompt2pr` is always included.                             |
-| `branch_prefix` | no       | `prompt2pr/`  | Prefix for the created branch name.                                                                    |
-| `dry_run`       | no       | `false`       | When `true`, runs the full pipeline but skips branch creation and PR submission.                       |
-| `base_url`      | no       | _(empty)_     | Override the LLM provider API base URL (useful for proxies or self-hosted endpoints).                  |
+| Input           | Required | Default       | Description                                                                                                 |
+| --------------- | -------- | ------------- | ----------------------------------------------------------------------------------------------------------- |
+| `prompt`        | **yes**  | —             | Plain-English instruction describing what changes to make. Sent to the LLM along with scoped file contents. |
+| `provider`      | **yes**  | —             | LLM provider: `mistral`, `openai`, `anthropic`, or `github`.                                                |
+| `model`         | no       | _(see below)_ | Model identifier. If omitted, the provider's default model is used.                                         |
+| `paths`         | no       | `**`          | Comma-separated glob patterns for files to include as context and allow modifications.                      |
+| `max_files`     | no       | `10`          | Maximum number of files the LLM may modify in a single run. Responses exceeding this are rejected.          |
+| `max_changes`   | no       | `200`         | Maximum total lines changed across all files. Responses exceeding this are rejected.                        |
+| `label`         | no       | `prompt2pr`   | Comma-separated labels to apply to the PR. `prompt2pr` is always included.                                  |
+| `branch_prefix` | no       | `prompt2pr/`  | Prefix for the created branch name. Full name: `{prefix}{timestamp}`.                                       |
+| `dry_run`       | no       | `false`       | When `true`, runs the full pipeline but skips branch creation and PR submission.                            |
+| `base_url`      | no       | _(empty)_     | Override the LLM provider API base URL (useful for proxies or self-hosted endpoints).                       |
 
 ### Default Models
 
@@ -81,40 +81,54 @@ All inputs are configured via the standard GitHub Actions `with:` syntax.
 
 ## Outputs
 
-| Output          | Description                                                         |
-| --------------- | ------------------------------------------------------------------- |
-| `pr_url`        | URL of the created Pull Request. Empty if skipped.                  |
-| `pr_number`     | Number of the created Pull Request. Empty if skipped.               |
-| `files_changed` | Number of files changed by the action.                              |
-| `lines_changed` | Total lines changed across all files.                               |
-| `skipped`       | `true` if PR creation was skipped (no changes detected or dry run). |
+The action sets several outputs you can use in downstream steps.
 
-Use outputs in downstream steps:
+| Output          | Type     | Description                                                                                          |
+| --------------- | -------- | ---------------------------------------------------------------------------------------------------- |
+| `pr_url`        | `string` | URL of the created Pull Request. Empty when `dry_run: true` or no changes detected.                  |
+| `pr_number`     | `string` | Number of the created Pull Request. Empty when `dry_run: true` or no changes detected.               |
+| `files_changed` | `string` | Number of files the LLM modified. Set even in dry-run mode.                                          |
+| `lines_changed` | `string` | Total lines changed across all modified files. Set even in dry-run mode.                             |
+| `skipped`       | `string` | `"true"` if PR creation was skipped (no changes detected or `dry_run` enabled). `"false"` otherwise. |
+
+### Using Outputs
 
 ```yaml
 - uses: davd-gzl/Prompt2PR@v1
-  id: prompt2pr
+  id: p2pr
   with:
-    prompt: 'Fix all dead links in markdown files'
-    provider: mistral
+    prompt: 'Add missing JSDoc comments to all exported functions'
+    provider: openai
   env:
-    MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+    OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-- run: echo "PR created at ${{ steps.prompt2pr.outputs.pr_url }}"
-  if: steps.prompt2pr.outputs.skipped != 'true'
+# Only runs if a PR was actually created
+- if: steps.p2pr.outputs.skipped != 'true'
+  run: |
+    echo "PR: ${{ steps.p2pr.outputs.pr_url }}"
+    echo "Changed ${{ steps.p2pr.outputs.files_changed }} files (${{ steps.p2pr.outputs.lines_changed }} lines)"
+
+# Useful for dry-run auditing
+- if: steps.p2pr.outputs.skipped == 'true'
+  run: |
+    echo "No PR created."
+    echo "Would have changed ${{ steps.p2pr.outputs.files_changed }} files (${{ steps.p2pr.outputs.lines_changed }} lines)"
 ```
 
 ---
 
 ## Provider Setup
 
+Prompt2PR supports four LLM providers. **Providers are interchangeable** — pick
+whichever you prefer and swap the `provider:` input and API key.
+
 ### Mistral
 
 1. Sign up at [console.mistral.ai](https://console.mistral.ai/).
 1. Navigate to **API Keys** and create a new key.
 1. In your GitHub repository, go to _Settings → Secrets and variables → Actions_
-   and add `MISTRAL_API_KEY` with your key-value.
+   and add `MISTRAL_API_KEY` with your key value.
 1. Set `provider: mistral` in your workflow.
 
 ### OpenAI
@@ -215,24 +229,54 @@ on:
 
 ## Examples
 
-Ready-to-use workflow files are in the [`examples/`](examples/) directory. Copy
-any file to `.github/workflows/` in your repository:
+Ready-to-use workflow files organized by use case in the
+[`examples/`](examples/) directory. Copy any file to `.github/workflows/` in
+your repository. See each category's README for detailed descriptions.
 
-| Example                                                       | Description                                       | Provider  | Trigger       |
-| ------------------------------------------------------------- | ------------------------------------------------- | --------- | ------------- |
-| [`fix-dead-links.yml`](examples/fix-dead-links.yml)           | Scan Markdown for broken links and fix them       | Mistral   | Weekly cron   |
-| [`update-copyright.yml`](examples/update-copyright.yml)       | Update copyright year in source and license files | Anthropic | Yearly cron   |
-| [`sync-readme.yml`](examples/sync-readme.yml)                 | Keep readme in sync with actual source code       | OpenAI    | Weekly cron   |
-| [`scan-secrets.yml`](examples/scan-secrets.yml)               | Detect accidentally committed secrets or tokens   | Mistral   | Daily cron    |
-| [`cleanup-todos.yml`](examples/cleanup-todos.yml)             | Clean up resolved TODO/FIXME/HACK comments        | Anthropic | Weekly cron   |
-| [`enforce-style-guide.yml`](examples/enforce-style-guide.yml) | Check and fix code style guide violations         | GitHub    | Push to main  |
-| [`generate-tests.yml`](examples/generate-tests.yml)           | Generate unit tests for untested functions        | OpenAI    | Weekly cron   |
-| [`translate-docs.yml`](examples/translate-docs.yml)           | Translate documentation into another language     | Anthropic | Manual        |
-| [`add-error-handling.yml`](examples/add-error-handling.yml)   | Add missing try/catch and input validation        | Mistral   | Manual        |
-| [`dry-run-audit.yml`](examples/dry-run-audit.yml)             | Preview changes without creating a PR (`dry_run`) | GitHub    | Manual        |
-| [`improve-logging.yml`](examples/improve-logging.yml)         | Replace console.log with structured logging       | OpenAI    | Manual        |
-| [`deprecation-cleanup.yml`](examples/deprecation-cleanup.yml) | Replace deprecated APIs with modern alternatives  | Anthropic | Monthly cron  |
-| [`on-issue-comment.yml`](examples/on-issue-comment.yml)       | Trigger via `/prompt2pr` comment on issues        | GitHub    | Issue comment |
+> **Providers are interchangeable.** Each example uses a specific provider, but
+> you can swap `provider:` and the corresponding API key to use any supported
+> provider.
+
+### Code Quality
+
+Improve code structure, safety, and standards compliance.
+
+| Workflow                                                                 | Description                                              | Trigger      |
+| ------------------------------------------------------------------------ | -------------------------------------------------------- | ------------ |
+| [enforce-style-guide.yml](examples/code-quality/enforce-style-guide.yml) | Fix naming conventions, add JSDoc, replace magic numbers | Push to main |
+| [add-error-handling.yml](examples/code-quality/add-error-handling.yml)   | Add try/catch blocks and input validation                | Manual       |
+| [deprecation-cleanup.yml](examples/code-quality/deprecation-cleanup.yml) | Replace deprecated APIs with modern alternatives         | Monthly cron |
+| [generate-tests.yml](examples/code-quality/generate-tests.yml)           | Generate unit tests for untested functions               | Weekly cron  |
+
+### Documentation
+
+Keep your docs accurate and up to date.
+
+| Workflow                                                            | Description                                   | Trigger     |
+| ------------------------------------------------------------------- | --------------------------------------------- | ----------- |
+| [sync-readme.yml](examples/documentation/sync-readme.yml)           | Keep README in sync with actual source code   | Weekly cron |
+| [translate-docs.yml](examples/documentation/translate-docs.yml)     | Translate markdown docs into another language | Manual      |
+| [update-copyright.yml](examples/documentation/update-copyright.yml) | Update copyright year across all files        | Yearly cron |
+
+### Maintenance
+
+Handle routine cleanup and housekeeping.
+
+| Workflow                                                        | Description                                 | Trigger     |
+| --------------------------------------------------------------- | ------------------------------------------- | ----------- |
+| [cleanup-todos.yml](examples/maintenance/cleanup-todos.yml)     | Remove resolved TODO/FIXME/HACK comments    | Weekly cron |
+| [improve-logging.yml](examples/maintenance/improve-logging.yml) | Replace console.log with structured logging | Manual      |
+| [fix-dead-links.yml](examples/maintenance/fix-dead-links.yml)   | Find and fix broken links in markdown files | Weekly cron |
+
+### Automation
+
+Event-driven workflows and change previews.
+
+| Workflow                                                               | Description                                             | Trigger       |
+| ---------------------------------------------------------------------- | ------------------------------------------------------- | ------------- |
+| [on-issue-comment.yml](examples/automation/on-issue-comment.yml)       | Trigger via `/prompt2pr` comment on issues              | Issue comment |
+| [dry-run-audit.yml](examples/automation/dry-run-audit.yml)             | Preview changes without creating a PR (`dry_run: true`) | Manual        |
+| [accessibility-audit.yml](examples/automation/accessibility-audit.yml) | Audit frontend files for a11y issues                    | Weekly cron   |
 
 ---
 
@@ -243,9 +287,10 @@ any file to `.github/workflows/` in your repository:
 Check the workflow run logs in the _Actions_ tab. Common causes:
 
 - **No changes detected** — The LLM found nothing to change. The log will say
-  `"Found 0 issues. No PR created."`.
+  `"Found 0 issues. No PR created."`. The `skipped` output will be `"true"`.
 - **Dry run enabled** — If `dry_run: true`, the pipeline runs but skips PR
-  creation.
+  creation. Check `files_changed` and `lines_changed` outputs to see what would
+  have been modified.
 
 ### API key errors
 
@@ -261,6 +306,15 @@ env:
   MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
+
+Each provider expects a specific environment variable:
+
+| Provider    | Environment Variable      |
+| ----------- | ------------------------- |
+| `mistral`   | `MISTRAL_API_KEY`         |
+| `openai`    | `OPENAI_API_KEY`          |
+| `anthropic` | `ANTHROPIC_API_KEY`       |
+| `github`    | `GITHUB_TOKEN` (built-in) |
 
 ### Rate limit errors
 
@@ -307,7 +361,20 @@ Guardrail violation: Number of changed files (15) exceeds max_files (10).
 ```
 
 The LLM tried to modify more files or lines than allowed. Increase `max_files`
-or `max_changes` if the change is expected, or narrow the `paths` scope.
+or `max_changes` if the change is expected, or narrow the `paths` scope to give
+the LLM less to work with.
+
+### Path scope violations
+
+If the LLM tries to modify files outside your `paths` globs, the guardrail will
+reject the change:
+
+```text
+Guardrail violation: File "config/secrets.json" is outside the allowed paths scope.
+```
+
+This is a safety feature. If you need the LLM to modify those files, expand your
+`paths` input.
 
 ---
 

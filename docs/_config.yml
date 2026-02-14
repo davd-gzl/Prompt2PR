@@ -1,0 +1,41 @@
+title: Prompt2PR
+description: >-
+  A GitHub Action that turns plain-English prompts into Pull Requests using
+  LLMs.
+remote_theme: just-the-docs/just-the-docs@v0.10.1
+url: https://davd-gzl.github.io/Prompt2PR
+
+aux_links:
+  'GitHub':
+    - 'https://github.com/davd-gzl/Prompt2PR'
+
+nav_order_default: 0
+
+heading_anchors: true
+
+search_enabled: true
+
+back_to_top: true
+back_to_top_text: 'Back to top'
+
+color_scheme: dark
+
+footer_content: >-
+  Prompt2PR is released under the <a
+  href="https://github.com/davd-gzl/Prompt2PR/blob/main/LICENSE">MIT
+  License</a>.
+
+# Exclude files that shouldn't be processed by Jekyll
+exclude:
+  - node_modules/
+  - dist/
+  - coverage/
+  - __tests__/
+  - __fixtures__/
+  - src/
+  - '*.ts'
+  - '*.js'
+  - '*.json'
+  - '*.mjs'
+  - Gemfile
+  - Gemfile.lock
