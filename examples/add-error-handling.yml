@@ -1,0 +1,48 @@
+# Add Error Handling — Prompt2PR Example Workflow
+#
+# Scans source files for missing error handling and adds try/catch blocks,
+# input validation, and descriptive error messages.
+# Uses Mistral. Runs manually with a generous change budget.
+#
+# Setup:
+#   1. Copy this file to .github/workflows/add-error-handling.yml
+#   2. Add MISTRAL_API_KEY as a GitHub Secret
+#   3. Adjust the paths to match your source directories
+
+name: Add Error Handling
+
+on:
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: 'Custom prompt (optional — overrides default)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  error-handling:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: Davphla/Prompt2PR@v1
+        with:
+          prompt: >-
+            ${{ github.event.inputs.prompt || 'Review all source files for
+            missing error handling. Add try/catch blocks around async
+            operations, validate function inputs, and replace generic throws
+            with descriptive error messages that include context about what
+            failed and why. Preserve existing behavior — only add defensive
+            code.' }}
+          provider: 'mistral'
+          paths: 'src/**'
+          max_files: 10
+          max_changes: 200
+          label: 'prompt2pr,error-handling'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}

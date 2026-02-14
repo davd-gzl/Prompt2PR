@@ -1,0 +1,47 @@
+# Improve Logging — Prompt2PR Example Workflow
+#
+# Adds structured logging to source files: log levels, context objects,
+# and consistent formatting. Uses OpenAI. Runs manually.
+#
+# Setup:
+#   1. Copy this file to .github/workflows/improve-logging.yml
+#   2. Add OPENAI_API_KEY as a GitHub Secret
+#   3. Adjust the paths to match your source directories
+
+name: Improve Logging
+
+on:
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: 'Custom prompt (optional — overrides default)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  improve-logging:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: Davphla/Prompt2PR@v1
+        with:
+          prompt: >-
+            ${{ github.event.inputs.prompt || 'Review all source files and
+            improve logging: replace console.log with a structured logger, add
+            contextual information to log messages (function name, relevant IDs,
+            timestamps), use appropriate log levels (debug, info, warn, error),
+            and ensure errors are logged with stack traces. Do not change
+            application logic.' }}
+          provider: 'openai'
+          paths: 'src/**'
+          max_files: 10
+          max_changes: 200
+          label: 'prompt2pr,logging'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}

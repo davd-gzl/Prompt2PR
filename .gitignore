@@ -99,4 +99,14 @@ __tests__/runner/*
 
 # IDE files
 .idea
+.vscode/
 *.code-workspace
+
+# BMAD framework (internal development process)
+_bmad/
+_bmad-output/
+
+# AI agent IDE configurations
+.agent/
+.claude/
+.github/agents/

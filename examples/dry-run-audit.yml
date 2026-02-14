@@ -1,0 +1,45 @@
+# Dry Run Audit — Prompt2PR Example Workflow
+#
+# Runs Prompt2PR in dry_run mode to preview what the LLM would change
+# without creating a branch or PR. Useful for auditing and testing prompts.
+# Uses GitHub Models (no external API key needed).
+#
+# Setup:
+#   1. Copy this file to .github/workflows/dry-run-audit.yml
+#   2. No API key needed — uses the built-in GITHUB_TOKEN
+#   3. Check the Actions log to see what would be changed
+
+name: Dry Run Audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: 'What should the AI analyze?'
+        required: true
+
+permissions:
+  contents: read
+  models: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: Davphla/Prompt2PR@v1
+        id: audit
+        with:
+          prompt: ${{ github.event.inputs.prompt }}
+          provider: 'github'
+          model: 'openai/gpt-4o'
+          paths: 'src/**'
+          dry_run: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - run: |
+          echo "Files that would change: ${{ steps.audit.outputs.files_changed }}"
+          echo "Lines that would change: ${{ steps.audit.outputs.lines_changed }}"
+          echo "Skipped: ${{ steps.audit.outputs.skipped }}"

@@ -1,0 +1,45 @@
+# Translate Documentation — Prompt2PR Example Workflow
+#
+# Translates markdown documentation into another language.
+# Uses Anthropic. Runs manually — specify the target language in the prompt.
+#
+# Setup:
+#   1. Copy this file to .github/workflows/translate-docs.yml
+#   2. Add ANTHROPIC_API_KEY as a GitHub Secret
+#   3. Adjust the paths and target language as needed
+
+name: Translate Documentation
+
+on:
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: 'What language to translate to?'
+        required: true
+        default: 'Translate all markdown documentation files into French.'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: Davphla/Prompt2PR@v1
+        with:
+          prompt: >-
+            ${{ github.event.inputs.prompt }} Preserve all markdown formatting,
+            code blocks, links, and front matter. Create translated files with a
+            language suffix (e.g., README.fr.md). Do not modify the original
+            English files.
+          provider: 'anthropic'
+          paths: '**/*.md'
+          max_files: 10
+          max_changes: 200
+          label: 'prompt2pr,translation'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

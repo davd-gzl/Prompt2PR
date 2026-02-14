@@ -218,13 +218,21 @@ on:
 Ready-to-use workflow files are in the [`examples/`](examples/) directory. Copy
 any file to `.github/workflows/` in your repository:
 
-| Example                                                 | Description                                       | Provider  |
-| ------------------------------------------------------- | ------------------------------------------------- | --------- |
-| [`fix-dead-links.yml`](examples/fix-dead-links.yml)     | Scan Markdown for broken links and fix them       | Mistral   |
-| [`update-copyright.yml`](examples/update-copyright.yml) | Update copyright year in source and license files | Anthropic |
-| [`sync-readme.yml`](examples/sync-readme.yml)           | Keep readme in sync with actual source code       | OpenAI    |
-| [`scan-secrets.yml`](examples/scan-secrets.yml)         | Detect accidentally committed secrets or tokens   | Mistral   |
-| [`cleanup-todos.yml`](examples/cleanup-todos.yml)       | Clean up resolved TODO/FIXME/HACK comments        | Anthropic |
+| Example                                                       | Description                                       | Provider  | Trigger       |
+| ------------------------------------------------------------- | ------------------------------------------------- | --------- | ------------- |
+| [`fix-dead-links.yml`](examples/fix-dead-links.yml)           | Scan Markdown for broken links and fix them       | Mistral   | Weekly cron   |
+| [`update-copyright.yml`](examples/update-copyright.yml)       | Update copyright year in source and license files | Anthropic | Yearly cron   |
+| [`sync-readme.yml`](examples/sync-readme.yml)                 | Keep README in sync with actual source code       | OpenAI    | Weekly cron   |
+| [`scan-secrets.yml`](examples/scan-secrets.yml)               | Detect accidentally committed secrets or tokens   | Mistral   | Daily cron    |
+| [`cleanup-todos.yml`](examples/cleanup-todos.yml)             | Clean up resolved TODO/FIXME/HACK comments        | Anthropic | Weekly cron   |
+| [`enforce-style-guide.yml`](examples/enforce-style-guide.yml) | Check and fix code style guide violations         | GitHub    | Push to main  |
+| [`generate-tests.yml`](examples/generate-tests.yml)           | Generate unit tests for untested functions        | OpenAI    | Weekly cron   |
+| [`translate-docs.yml`](examples/translate-docs.yml)           | Translate documentation into another language     | Anthropic | Manual        |
+| [`add-error-handling.yml`](examples/add-error-handling.yml)   | Add missing try/catch and input validation        | Mistral   | Manual        |
+| [`dry-run-audit.yml`](examples/dry-run-audit.yml)             | Preview changes without creating a PR (`dry_run`) | GitHub    | Manual        |
+| [`improve-logging.yml`](examples/improve-logging.yml)         | Replace console.log with structured logging       | OpenAI    | Manual        |
+| [`deprecation-cleanup.yml`](examples/deprecation-cleanup.yml) | Replace deprecated APIs with modern alternatives  | Anthropic | Monthly cron  |
+| [`on-issue-comment.yml`](examples/on-issue-comment.yml)       | Trigger via `/prompt2pr` comment on issues        | GitHub    | Issue comment |
 
 ---
 

@@ -1,0 +1,42 @@
+# On Issue Comment — Prompt2PR Example Workflow
+#
+# Triggers Prompt2PR when someone comments "/prompt2pr <instruction>"
+# on an issue. The comment body becomes the prompt.
+# Uses GitHub Models (no external API key needed).
+#
+# Setup:
+#   1. Copy this file to .github/workflows/on-issue-comment.yml
+#   2. No API key needed — uses the built-in GITHUB_TOKEN
+
+name: Prompt2PR on Comment
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: read
+  models: read
+
+jobs:
+  prompt2pr:
+    if: startsWith(github.event.comment.body, '/prompt2pr ')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: Davphla/Prompt2PR@v1
+        id: prompt2pr
+        with:
+          prompt: >-
+            ${{ github.event.comment.body }}
+          provider: 'github'
+          model: 'openai/gpt-4o'
+          paths: 'src/**'
+          max_files: 5
+          max_changes: 100
+          label: 'prompt2pr,from-comment'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,50 @@
+# Generate Missing Tests — Prompt2PR Example Workflow
+#
+# Scans source files for untested functions and generates unit tests.
+# Uses OpenAI. Runs weekly on Thursday at 7:00 UTC and can be triggered manually.
+#
+# Setup:
+#   1. Copy this file to .github/workflows/generate-tests.yml
+#   2. Add OPENAI_API_KEY as a GitHub Secret
+#   3. Adjust the paths and test framework references for your project
+
+name: Generate Missing Tests
+
+on:
+  schedule:
+    # Run every Thursday at 7:00 UTC
+    - cron: '0 7 * * 4'
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: 'Custom prompt (optional — overrides default)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  generate-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: Davphla/Prompt2PR@v1
+        with:
+          prompt: >-
+            ${{ github.event.inputs.prompt || 'Analyze the source files and
+            their corresponding test files. Identify exported functions or
+            classes that have no test coverage. For each untested function,
+            create a new test or add test cases to the existing test file. Use
+            Jest with TypeScript. Follow the existing test patterns in the
+            project. Only create tests — do not modify source files.' }}
+          provider: 'openai'
+          paths: 'src/**,__tests__/**'
+          max_files: 5
+          max_changes: 200
+          label: 'prompt2pr,tests'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}

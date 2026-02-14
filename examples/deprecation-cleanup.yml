@@ -1,0 +1,51 @@
+# Deprecation Cleanup — Prompt2PR Example Workflow
+#
+# Finds deprecated API calls, outdated patterns, and legacy code,
+# then replaces them with modern alternatives.
+# Uses Anthropic. Runs monthly and can be triggered manually.
+#
+# Setup:
+#   1. Copy this file to .github/workflows/deprecation-cleanup.yml
+#   2. Add ANTHROPIC_API_KEY as a GitHub Secret
+#   3. Adjust the paths to match your source directories
+
+name: Deprecation Cleanup
+
+on:
+  schedule:
+    # Run on the 1st of every month at 8:00 UTC
+    - cron: '0 8 1 * *'
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: 'Custom prompt (optional — overrides default)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  deprecation-cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: Davphla/Prompt2PR@v1
+        with:
+          prompt: >-
+            ${{ github.event.inputs.prompt || 'Find all deprecated API calls,
+            outdated patterns, and legacy code in the source files. Replace
+            deprecated Node.js APIs with their modern equivalents (e.g.,
+            fs.promises instead of callback-based fs, URL constructor instead of
+            url.parse). Update any TypeScript patterns that use deprecated
+            syntax. Add comments explaining the migration where helpful.' }}
+          provider: 'anthropic'
+          paths: 'src/**'
+          max_files: 10
+          max_changes: 200
+          label: 'prompt2pr,deprecation'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
