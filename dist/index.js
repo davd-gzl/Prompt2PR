@@ -30981,6 +30981,8 @@ const VALID_PROVIDERS = [
 // ---------------------------------------------------------------------------
 const DEFAULT_MAX_FILES = 10;
 const DEFAULT_MAX_CHANGES = 200;
+const MAX_FILES_UPPER_BOUND = 1000;
+const MAX_CHANGES_UPPER_BOUND = 100_000;
 const DEFAULT_BRANCH_PREFIX = 'prompt2pr/';
 const DEFAULT_LABEL = 'prompt2pr';
 /**
@@ -31005,14 +31007,21 @@ function isValidProvider(value) {
  * Parse a string as a positive integer. Returns the default if the value is
  * empty. Throws ConfigError for non-numeric or non-positive values.
  */
-function parsePositiveInt(value, name, defaultValue) {
+function parsePositiveInt(value, name, defaultValue, upperBound) {
     const trimmed = value.trim();
     if (trimmed === '') {
         return defaultValue;
     }
+    // Strict integer format: reject scientific notation, floats, etc.
+    if (!/^\d+$/.test(trimmed)) {
+        throw new ConfigError(`Invalid value for '${name}': '${value}'. Must be a positive integer (digits only).`);
+    }
     const parsed = Number(trimmed);
     if (!Number.isInteger(parsed) || parsed <= 0) {
         throw new ConfigError(`Invalid value for '${name}': '${value}'. Must be a positive integer.`);
+    }
+    if (upperBound !== undefined && parsed > upperBound) {
+        throw new ConfigError(`Invalid value for '${name}': ${parsed} exceeds the maximum allowed value of ${upperBound}.`);
     }
     return parsed;
 }
@@ -31034,12 +31043,12 @@ const ALLOWED_BASE_URL_HOSTS = new Set([
  * arbitrary endpoints, and plaintext-over-HTTP transmission.
  *
  * Self-hosted / proxy URLs can be allowed by adding the hostname to
- * the `PROMPT2PR_ALLOWED_HOSTS` environment variable (comma-separated).
+ * the `allowed_hosts` action input (comma-separated).
  *
  * @throws {ConfigError} If the URL is malformed, not HTTPS, or targets
  *   an untrusted host.
  */
-function validateBaseUrl(baseUrl) {
+function validateBaseUrl(baseUrl, allowedHostsInput) {
     let parsed;
     try {
         parsed = new URL(baseUrl);
@@ -31054,7 +31063,7 @@ function validateBaseUrl(baseUrl) {
     }
     // Build the full allowlist: built-in providers + user-defined hosts
     const allowedHosts = new Set(ALLOWED_BASE_URL_HOSTS);
-    const extraHosts = (process.env.PROMPT2PR_ALLOWED_HOSTS ?? '')
+    const extraHosts = allowedHostsInput
         .split(',')
         .map((h) => h.trim().toLowerCase())
         .filter((h) => h.length > 0);
@@ -31065,7 +31074,7 @@ function validateBaseUrl(baseUrl) {
     if (!allowedHosts.has(hostname)) {
         throw new ConfigError(`Invalid 'base_url': host '${hostname}' is not a recognised LLM provider. ` +
             `Allowed hosts: ${[...allowedHosts].join(', ')}. ` +
-            `For self-hosted endpoints, add the hostname to the PROMPT2PR_ALLOWED_HOSTS env var.`);
+            `For self-hosted endpoints, add the hostname to the 'allowed_hosts' action input.`);
     }
 }
 /**
@@ -31112,9 +31121,10 @@ function validateConfig() {
             `alphanumeric characters, hyphens, dots, slashes, underscores, colons, and @.`);
     }
     const baseUrl = coreExports.getInput('base_url');
+    const allowedHosts = coreExports.getInput('allowed_hosts');
     // Validate base_url if provided (SSRF + credential-exfiltration prevention)
     if (baseUrl) {
-        validateBaseUrl(baseUrl);
+        validateBaseUrl(baseUrl, allowedHosts);
     }
     const branchPrefix = coreExports.getInput('branch_prefix') || DEFAULT_BRANCH_PREFIX;
     // Sanitize branch prefix — only allow safe git ref characters
@@ -31122,8 +31132,8 @@ function validateConfig() {
         throw new ConfigError(`Invalid 'branch_prefix': '${branchPrefix}'. ` +
             `Branch prefixes may only contain alphanumeric characters, hyphens, dots, underscores, and slashes.`);
     }
-    const maxFiles = parsePositiveInt(coreExports.getInput('max_files'), 'max_files', DEFAULT_MAX_FILES);
-    const maxChanges = parsePositiveInt(coreExports.getInput('max_changes'), 'max_changes', DEFAULT_MAX_CHANGES);
+    const maxFiles = parsePositiveInt(coreExports.getInput('max_files'), 'max_files', DEFAULT_MAX_FILES, MAX_FILES_UPPER_BOUND);
+    const maxChanges = parsePositiveInt(coreExports.getInput('max_changes'), 'max_changes', DEFAULT_MAX_CHANGES, MAX_CHANGES_UPPER_BOUND);
     // --- Paths ---
     const pathsRaw = coreExports.getInput('paths');
     const paths = pathsRaw ? parseCommaSeparated(pathsRaw) : ['**'];
@@ -33695,10 +33705,15 @@ async function scanFiles(patterns, workDir = process.cwd()) {
     let excludedDirectory = 0;
     let excludedGitHub = 0;
     for (const absPath of matchedPaths) {
-        // Stat the file — skip directories
-        const stat = await fs$1.stat(absPath);
+        // Use lstat to avoid following symlinks (TOCTOU prevention)
+        const stat = await fs$1.lstat(absPath);
         if (stat.isDirectory()) {
             excludedDirectory++;
+            continue;
+        }
+        // Skip symbolic links — they could point outside the repository
+        if (stat.isSymbolicLink()) {
+            log$8.warn(`Skipping symbolic link: ${toRelativePosix(absPath, workDir)}`);
             continue;
         }
         // Skip binary files
@@ -33860,13 +33875,20 @@ async function commitAndPush(changes, branchName, commitMessage, workDir) {
     const addedOrModifiedPaths = changes
         .filter((c) => c.action !== 'delete')
         .map((c) => c.path);
+    // Defense-in-depth: reject paths starting with '-' to prevent git flag injection
+    const allPaths = [...addedOrModifiedPaths, ...deletedPaths];
+    for (const p of allPaths) {
+        if (p.startsWith('-')) {
+            throw new GitError(`Refusing to stage file '${p}': paths starting with '-' could be interpreted as git flags`);
+        }
+    }
     if (addedOrModifiedPaths.length > 0) {
         log$7.info(`Staging ${addedOrModifiedPaths.length} added/modified file(s)`);
-        await git(['add', ...addedOrModifiedPaths], workDir);
+        await git(['add', '--', ...addedOrModifiedPaths], workDir);
     }
     if (deletedPaths.length > 0) {
         log$7.info(`Staging ${deletedPaths.length} deleted file(s)`);
-        await git(['rm', ...deletedPaths], workDir);
+        await git(['rm', '--', ...deletedPaths], workDir);
     }
     // Commit
     log$7.info(`Committing: ${commitMessage}`);
@@ -36104,6 +36126,11 @@ function validateChanges(changes, config) {
         if (path$1.isAbsolute(change.path)) {
             throw new GuardrailError(`File '${change.path}' is an absolute path. ` +
                 `All file paths must be relative to the repository root.`);
+        }
+        // Reject paths starting with '-' (could be interpreted as git flags)
+        if (change.path.startsWith('-')) {
+            throw new GuardrailError(`File '${change.path}' starts with '-', which could be interpreted as a command-line flag. ` +
+                `All file paths must not begin with a hyphen.`);
         }
         // Reject paths containing '..' segments (directory traversal)
         const normalized = path$1.normalize(change.path);
@@ -40128,9 +40155,38 @@ var githubExports = requireGithub();
  * @see _bmad-output/planning-artifacts/epics.md#Story 4.2
  */
 // ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+/**
+ * Maximum length for the AI-generated summary in the PR body.
+ * Prevents resource exhaustion from excessively long LLM summaries.
+ */
+const MAX_SUMMARY_LENGTH = 4096;
+// ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
 const log$5 = createLogger$1('pr-creator');
+/**
+ * Sanitize an AI-generated summary for safe inclusion in a GitHub PR body.
+ *
+ * - Strips HTML tags to prevent injection
+ * - Escapes GitHub @mentions to prevent notification spam
+ * - Escapes issue/PR references (#123) to prevent unintended cross-links
+ * - Truncates to a reasonable length
+ */
+function sanitizeSummary(raw) {
+    let sanitized = raw
+        // Strip HTML tags
+        .replace(/<[^>]*>/g, '')
+        // Escape @mentions: @ → @\u200B (zero-width space breaks mention)
+        .replace(/@([a-zA-Z0-9_-])/g, '@\u200B$1')
+        // Escape issue/PR references: #123 → #\u200B123
+        .replace(/#(\d)/g, '#\u200B$1');
+    if (sanitized.length > MAX_SUMMARY_LENGTH) {
+        sanitized = sanitized.slice(0, MAX_SUMMARY_LENGTH) + '...';
+    }
+    return sanitized;
+}
 /**
  * Build the PR title with the [Prompt2PR] prefix and a summary.
  */
@@ -40159,7 +40215,10 @@ function buildBody(prompt, changes, metadata, summary) {
     const summarySection = summary
         ? `## Summary
 
-${summary}
+> [!NOTE]
+> The summary below was generated by an AI model and may contain inaccuracies.
+
+${sanitizeSummary(summary)}
 
 `
         : '';
@@ -40394,6 +40453,7 @@ const DEFAULT_MODEL$3 = 'claude-sonnet-4-20250514';
 const ANTHROPIC_VERSION = '2023-06-01';
 const TIMEOUT_MS$1 = 120_000; // 120 seconds (NFR2)
 const MAX_TOKENS = 4096;
+const MAX_RESPONSE_BYTES$1 = 10 * 1024 * 1024; // 10 MB — reject oversized responses
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
@@ -40498,9 +40558,29 @@ class AnthropicProvider {
             }
             throw new ProviderError(message, this.name, response.status);
         }
-        // Parse the successful response
-        const responseBody = await response.json();
-        log$3.debug(`Raw response: ${JSON.stringify(responseBody).slice(0, 500)}`);
+        // Parse the successful response — read as text first for safety checks
+        const contentType = response.headers.get('content-type') ?? '';
+        if (!contentType.includes('application/json')) {
+            throw new ProviderError(`Anthropic API returned unexpected Content-Type: '${contentType.slice(0, 100)}' (expected application/json)`, this.name);
+        }
+        const responseText = await response.text();
+        if (responseText.length > MAX_RESPONSE_BYTES$1) {
+            throw new ProviderError(`Anthropic API response too large: ${responseText.length} bytes exceeds ${MAX_RESPONSE_BYTES$1} byte limit`, this.name);
+        }
+        let responseBody;
+        try {
+            responseBody = JSON.parse(responseText);
+        }
+        catch {
+            throw new ProviderError(`Anthropic API returned invalid JSON in response body`, this.name);
+        }
+        // Log only structural metadata — never log raw response content,
+        // which may contain secrets echoed back from scanned files.
+        const contentCount = Array.isArray(responseBody?.content)
+            ? responseBody.content.length
+            : 0;
+        log$3.debug(`Response received: ${contentCount} content block(s), ` +
+            `payload size ${JSON.stringify(responseBody).length} bytes`);
         return this.parseResponse(responseBody);
     }
     /**
@@ -40579,6 +40659,8 @@ class AnthropicProvider {
 // Constants
 // ---------------------------------------------------------------------------
 const TIMEOUT_MS = 120_000; // 120 seconds (NFR2)
+const MAX_RESPONSE_BYTES = 10 * 1024 * 1024; // 10 MB — reject oversized responses
+const DEFAULT_MAX_TOKENS = 16_384; // Bound response size and cost
 // ---------------------------------------------------------------------------
 // Base class
 // ---------------------------------------------------------------------------
@@ -40643,7 +40725,8 @@ class BaseOpenAICompatibleProvider {
         const body = JSON.stringify({
             model,
             messages: request.messages,
-            response_format: { type: 'json_object' }
+            response_format: { type: 'json_object' },
+            max_tokens: DEFAULT_MAX_TOKENS
         });
         let response;
         try {
@@ -40676,9 +40759,29 @@ class BaseOpenAICompatibleProvider {
             }
             throw new ProviderError(message, this.name, response.status);
         }
-        // Parse the successful response
-        const responseBody = await response.json();
-        this.log.debug(`Raw response: ${JSON.stringify(responseBody).slice(0, 500)}`);
+        // Parse the successful response — read as text first for safety checks
+        const contentType = response.headers.get('content-type') ?? '';
+        if (!contentType.includes('application/json')) {
+            throw new ProviderError(`${this.displayName} API returned unexpected Content-Type: '${contentType.slice(0, 100)}' (expected application/json)`, this.name);
+        }
+        const responseText = await response.text();
+        if (responseText.length > MAX_RESPONSE_BYTES) {
+            throw new ProviderError(`${this.displayName} API response too large: ${responseText.length} bytes exceeds ${MAX_RESPONSE_BYTES} byte limit`, this.name);
+        }
+        let responseBody;
+        try {
+            responseBody = JSON.parse(responseText);
+        }
+        catch {
+            throw new ProviderError(`${this.displayName} API returned invalid JSON in response body`, this.name);
+        }
+        // Log only structural metadata — never log raw response content,
+        // which may contain secrets echoed back from scanned files.
+        const choicesCount = Array.isArray(responseBody?.choices)
+            ? responseBody.choices.length
+            : 0;
+        this.log.debug(`Response received: ${choicesCount} choice(s), ` +
+            `payload size ${JSON.stringify(responseBody).length} bytes`);
         return this.parseResponse(responseBody);
     }
     /**
@@ -41164,6 +41267,10 @@ async function run() {
         await commitAndPush(validated, branchName, commitMessage, process.cwd());
         // Step 11: Create Pull Request (FR19-FR22)
         const token = process.env.GITHUB_TOKEN ?? '';
+        if (!token) {
+            throw new ConfigError('Missing GITHUB_TOKEN: the environment variable is required for PR creation. ' +
+                "Pass it via the 'env' block in your workflow YAML.");
+        }
         const metadata = {
             timestamp: new Date().toISOString(),
             model: resolvedModel,
@@ -41203,5 +41310,9 @@ async function run() {
  * action's main logic.
  */
 /* istanbul ignore next */
-run();
+run().catch((error) => {
+    // eslint-disable-next-line no-console
+    console.error('Unhandled error in action entrypoint:', error);
+    process.exitCode = 1;
+});
 //# sourceMappingURL=index.js.map
