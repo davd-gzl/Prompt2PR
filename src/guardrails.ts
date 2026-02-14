@@ -117,7 +117,7 @@ export function validateChanges(
 
     // Reject paths containing '..' segments (directory traversal)
     const normalized = path.normalize(change.path)
-    const segments = normalized.split(path.sep)
+    const segments = normalized.split(/[/\\]/)
     if (segments.includes('..')) {
       throw new GuardrailError(
         `File '${change.path}' contains path traversal ('..') and would escape the repository root. ` +
