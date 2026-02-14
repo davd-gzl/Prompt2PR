@@ -77,6 +77,39 @@ describe('guardrails.ts — validateChanges()', () => {
     expect(result).toEqual([])
   })
 
+  // -- Path traversal protection (security) --------------------------------
+
+  it('throws GuardrailError for paths containing ".." traversal', () => {
+    const changes = [makeChange({ path: '../../etc/passwd' })]
+    const config = makeConfig()
+
+    expect(() => validateChanges(changes, config)).toThrow(GuardrailError)
+    expect(() => validateChanges(changes, config)).toThrow(/path traversal/)
+  })
+
+  it('throws GuardrailError for paths with ".." in the middle', () => {
+    const changes = [makeChange({ path: 'src/../../../etc/passwd' })]
+    const config = makeConfig()
+
+    expect(() => validateChanges(changes, config)).toThrow(GuardrailError)
+    expect(() => validateChanges(changes, config)).toThrow(/path traversal/)
+  })
+
+  it('throws GuardrailError for absolute paths', () => {
+    const changes = [makeChange({ path: '/etc/passwd' })]
+    const config = makeConfig()
+
+    expect(() => validateChanges(changes, config)).toThrow(GuardrailError)
+    expect(() => validateChanges(changes, config)).toThrow(/absolute path/)
+  })
+
+  it('allows paths that contain ".." as part of a filename', () => {
+    const changes = [makeChange({ path: 'src/..hidden-file.ts' })]
+    const config = makeConfig()
+
+    expect(validateChanges(changes, config)).toHaveLength(1)
+  })
+
   // -- .github/ exclusion (FR31) -------------------------------------------
 
   it('throws GuardrailError for files in .github/ directory', () => {
