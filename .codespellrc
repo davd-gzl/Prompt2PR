@@ -1,3 +1,3 @@
 [codespell]
 ignore-words-list = afterall
-skip = dist,node_modules,.git
+skip = dist,node_modules,.git,package-lock.json

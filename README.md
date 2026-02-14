@@ -15,9 +15,9 @@ Get a working Prompt2PR workflow in under 5 minutes:
 
 1. **Get an API key** from your LLM provider (see
    [Provider Setup](#provider-setup) below).
-2. **Add the key as a GitHub Secret** in your repository under _Settings →
+1. **Add the key as a GitHub Secret** in your repository under _Settings →
    Secrets and variables → Actions_ (e.g., `MISTRAL_API_KEY`).
-3. **Create a workflow file** at `.github/workflows/prompt2pr.yml`:
+1. **Create a workflow file** at `.github/workflows/prompt2pr.yml`:
 
 ```yaml
 name: Prompt2PR
@@ -46,7 +46,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-4. **Trigger the workflow** from the _Actions_ tab → _Prompt2PR_ → _Run
+1. **Trigger the workflow** from the _Actions_ tab → _Prompt2PR_ → _Run
    workflow_, enter your prompt, and watch the PR appear.
 
 ---
@@ -112,24 +112,24 @@ Use outputs in downstream steps:
 ### Mistral
 
 1. Sign up at [console.mistral.ai](https://console.mistral.ai/).
-2. Navigate to **API Keys** and create a new key.
-3. In your GitHub repository, go to _Settings → Secrets and variables → Actions_
+1. Navigate to **API Keys** and create a new key.
+1. In your GitHub repository, go to _Settings → Secrets and variables → Actions_
    and add `MISTRAL_API_KEY` with your key-value.
-4. Set `provider: mistral` in your workflow.
+1. Set `provider: mistral` in your workflow.
 
 ### OpenAI
 
 1. Sign up at [platform.openai.com](https://platform.openai.com/).
-2. Navigate to **API Keys** and create a new secret key.
-3. In your GitHub repository, add `OPENAI_API_KEY` as a GitHub Secret.
-4. Set `provider: openai` in your workflow.
+1. Navigate to **API Keys** and create a new secret key.
+1. In your GitHub repository, add `OPENAI_API_KEY` as a GitHub Secret.
+1. Set `provider: openai` in your workflow.
 
 ### Anthropic
 
 1. Sign up at [console.anthropic.com](https://console.anthropic.com/).
-2. Navigate to **API Keys** and create a new key.
-3. In your GitHub repository, add `ANTHROPIC_API_KEY` as a GitHub Secret.
-4. Set `provider: anthropic` in your workflow.
+1. Navigate to **API Keys** and create a new key.
+1. In your GitHub repository, add `ANTHROPIC_API_KEY` as a GitHub Secret.
+1. Set `provider: anthropic` in your workflow.
 
 ### GitHub Models
 
@@ -138,10 +138,10 @@ needed. This works with any GitHub Copilot subscription.
 
 1. Ensure your GitHub account has access to
    [GitHub Models](https://github.com/marketplace/models).
-2. No additional secrets required — the built-in `GITHUB_TOKEN` is used for
+1. No additional secrets required — the built-in `GITHUB_TOKEN` is used for
    authentication.
-3. Add `models: read` to your workflow permissions.
-4. Set `provider: github` and use models in `publisher/model-name` format (e.g.,
+1. Add `models: read` to your workflow permissions.
+1. Set `provider: github` and use models in `publisher/model-name` format (e.g.,
    `openai/gpt-4o`, `anthropic/claude-sonnet-4.5`).
 
 ```yaml
@@ -241,7 +241,7 @@ Check the workflow run logs in the _Actions_ tab. Common causes:
 
 ### API key errors
 
-```
+```text
 Missing API key: environment variable 'MISTRAL_API_KEY' is not set.
 ```
 
@@ -286,7 +286,7 @@ permissions:
 
 ### Guardrail violations
 
-```
+```text
 Guardrail violation: Number of changed files (15) exceeds max_files (10).
 ```
 
@@ -325,7 +325,7 @@ npm run all
 ### Local Testing
 
 1. Copy `.env.example` to `.env` and fill in your API keys.
-2. Run `npm run local-action` to simulate a GitHub Actions run locally.
+1. Run `npm run local-action` to simulate a GitHub Actions run locally.
 
 ### Release Process
 
