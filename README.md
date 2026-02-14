@@ -15,8 +15,8 @@ Get a working Prompt2PR workflow in under 5 minutes:
 
 1. **Get an API key** from your LLM provider (see
    [Provider Setup](#provider-setup) below).
-2. **Add the key as a GitHub Secret** in your repo under _Settings → Secrets and
-   variables → Actions_ (e.g., `MISTRAL_API_KEY`).
+2. **Add the key as a GitHub Secret** in your repository under _Settings →
+   Secrets and variables → Actions_ (e.g., `MISTRAL_API_KEY`).
 3. **Create a workflow file** at `.github/workflows/prompt2pr.yml`:
 
 ```yaml
@@ -113,22 +113,22 @@ Use outputs in downstream steps:
 
 1. Sign up at [console.mistral.ai](https://console.mistral.ai/).
 2. Navigate to **API Keys** and create a new key.
-3. In your GitHub repo, go to _Settings → Secrets and variables → Actions_ and
-   add `MISTRAL_API_KEY` with your key value.
+3. In your GitHub repository, go to _Settings → Secrets and variables → Actions_
+   and add `MISTRAL_API_KEY` with your key-value.
 4. Set `provider: mistral` in your workflow.
 
 ### OpenAI
 
 1. Sign up at [platform.openai.com](https://platform.openai.com/).
 2. Navigate to **API Keys** and create a new secret key.
-3. In your GitHub repo, add `OPENAI_API_KEY` as a GitHub Secret.
+3. In your GitHub repository, add `OPENAI_API_KEY` as a GitHub Secret.
 4. Set `provider: openai` in your workflow.
 
 ### Anthropic
 
 1. Sign up at [console.anthropic.com](https://console.anthropic.com/).
 2. Navigate to **API Keys** and create a new key.
-3. In your GitHub repo, add `ANTHROPIC_API_KEY` as a GitHub Secret.
+3. In your GitHub repository, add `ANTHROPIC_API_KEY` as a GitHub Secret.
 4. Set `provider: anthropic` in your workflow.
 
 ### GitHub Models
@@ -216,13 +216,13 @@ on:
 ## Examples
 
 Ready-to-use workflow files are in the [`examples/`](examples/) directory. Copy
-any file to `.github/workflows/` in your repo:
+any file to `.github/workflows/` in your repository:
 
 | Example                                                 | Description                                       | Provider  |
 | ------------------------------------------------------- | ------------------------------------------------- | --------- |
-| [`fix-dead-links.yml`](examples/fix-dead-links.yml)     | Scan markdown for broken links and fix them       | Mistral   |
+| [`fix-dead-links.yml`](examples/fix-dead-links.yml)     | Scan Markdown for broken links and fix them       | Mistral   |
 | [`update-copyright.yml`](examples/update-copyright.yml) | Update copyright year in source and license files | Anthropic |
-| [`sync-readme.yml`](examples/sync-readme.yml)           | Keep README in sync with actual source code       | OpenAI    |
+| [`sync-readme.yml`](examples/sync-readme.yml)           | Keep readme in sync with actual source code       | OpenAI    |
 | [`scan-secrets.yml`](examples/scan-secrets.yml)         | Detect accidentally committed secrets or tokens   | Mistral   |
 | [`cleanup-todos.yml`](examples/cleanup-todos.yml)       | Clean up resolved TODO/FIXME/HACK comments        | Anthropic |
 
@@ -335,7 +335,7 @@ Use the release script to tag and publish a new version:
 script/release
 ```
 
-This handles semver tagging (`v1.x.x`) and floats the major tag (`v1`) for users
+This handles SemVer tagging (`v1.x.x`) and floats the major tag (`v1`) for users
 referencing `@v1`.
 
 ---
