@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: read
+  models: read
 
 jobs:
   test-typescript:
@@ -58,6 +59,11 @@ jobs:
         uses: ./
         with:
           prompt: 'Test prompt - verify action loads correctly'
-          provider: 'mistral'
+          provider: 'github'
+          model: 'openai/gpt-4o'
+          paths: 'README.md'
+          max_files: 3
+          max_changes: 50
+          dry_run: 'true'
         env:
-          MISTRAL_API_KEY: 'test-key-for-ci'
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
