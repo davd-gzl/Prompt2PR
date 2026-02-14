@@ -149,7 +149,10 @@ export async function commitAndPush(
 
   // Configure git identity for the commit (required in GitHub Actions runners)
   await git(['config', 'user.name', 'prompt2pr[bot]'], workDir)
-  await git(['config', 'user.email', 'prompt2pr[bot]@users.noreply.github.com'], workDir)
+  await git(
+    ['config', 'user.email', 'prompt2pr[bot]@users.noreply.github.com'],
+    workDir
+  )
 
   // Create and checkout new branch
   await git(['checkout', '-b', branchName], workDir)
