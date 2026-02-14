@@ -47,8 +47,8 @@ Get a working Prompt2PR workflow in under 5 minutes:
    ```
 
 4. **Trigger the workflow** from the _Actions_ tab → _Prompt2PR_ → _Run
-   workflow_, enter your prompt, and watch the PR appear. You can also run it
-   on push or on a [cron schedule](#scheduling--triggers).
+   workflow_, enter your prompt, and watch the PR appear. You can also run it on
+   push or on a [cron schedule](#scheduling--triggers).
 
 ---
 
