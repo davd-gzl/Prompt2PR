@@ -50,30 +50,30 @@ development_status:
   2-1-file-scanner-with-glob-matching: done
   2-2-prompt-assembly-with-context-window-management: done
   epic-2-retrospective: optional
-  epic-3: backlog
-  3-1-provider-interface-factory: backlog
-  3-2-mistral-provider-implementation: backlog
-  3-3-response-parser-json-to-filechanges: backlog
-  3-4-anthropic-provider-implementation: backlog
+  epic-3: done
+  3-1-provider-interface-factory: done
+  3-2-mistral-provider-implementation: done
+  3-3-response-parser-json-to-filechanges: done
+  3-4-anthropic-provider-implementation: done
   epic-3-retrospective: optional
-  epic-4: backlog
-  4-1-git-manager-branch-stage-commit-push: backlog
-  4-2-pr-creator-github-api-integration: backlog
-  4-3-main-pipeline-end-to-end-orchestration: backlog
+  epic-4: done
+  4-1-git-manager-branch-stage-commit-push: done
+  4-2-pr-creator-github-api-integration: done
+  4-3-main-pipeline-end-to-end-orchestration: done
   epic-4-retrospective: optional
-  epic-5: backlog
-  5-1-post-llm-guardrail-enforcement: backlog
-  5-2-pre-llm-file-scope-enforcement: backlog
+  epic-5: done
+  5-1-post-llm-guardrail-enforcement: done
+  5-2-pre-llm-file-scope-enforcement: done
   epic-5-retrospective: optional
   epic-6: backlog
   6-1-openai-provider-implementation: backlog
   epic-6-retrospective: optional
-  epic-7: backlog
-  7-1-scheduling-trigger-configuration: backlog
-  7-2-structured-logging-observability: backlog
+  epic-7: in-progress
+  7-1-scheduling-trigger-configuration: done
+  7-2-structured-logging-observability: done
   epic-7-retrospective: optional
   epic-8: backlog
   8-1-readme-quick-start-config-reference-provider-setup: backlog
   8-2-example-workflows: backlog
-  8-3-test-coverage-gate-release: backlog
+  8-3-test-coverage-gate-release: done
   epic-8-retrospective: optional
