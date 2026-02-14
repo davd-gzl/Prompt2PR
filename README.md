@@ -222,7 +222,7 @@ any file to `.github/workflows/` in your repository:
 | ------------------------------------------------------------- | ------------------------------------------------- | --------- | ------------- |
 | [`fix-dead-links.yml`](examples/fix-dead-links.yml)           | Scan Markdown for broken links and fix them       | Mistral   | Weekly cron   |
 | [`update-copyright.yml`](examples/update-copyright.yml)       | Update copyright year in source and license files | Anthropic | Yearly cron   |
-| [`sync-readme.yml`](examples/sync-readme.yml)                 | Keep README in sync with actual source code       | OpenAI    | Weekly cron   |
+| [`sync-readme.yml`](examples/sync-readme.yml)                 | Keep readme in sync with actual source code       | OpenAI    | Weekly cron   |
 | [`scan-secrets.yml`](examples/scan-secrets.yml)               | Detect accidentally committed secrets or tokens   | Mistral   | Daily cron    |
 | [`cleanup-todos.yml`](examples/cleanup-todos.yml)             | Clean up resolved TODO/FIXME/HACK comments        | Anthropic | Weekly cron   |
 | [`enforce-style-guide.yml`](examples/enforce-style-guide.yml) | Check and fix code style guide violations         | GitHub    | Push to main  |
