@@ -53,6 +53,8 @@ jest.unstable_mockModule('../src/pr-creator.js', () => ({
 }))
 
 const { run } = await import('../src/main.js')
+const { ConfigError, ProviderError, GuardrailError, GitError, ParseError } =
+  await import('../src/errors.js')
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -145,6 +147,13 @@ describe('main.ts — run()', () => {
 
     // Verify no failure was set
     expect(core.setFailed).not.toHaveBeenCalled()
+
+    // Verify structured summary log (FR26 — Story 7.2)
+    expect(core.info).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /Scanned 1 files matching \*\*\. Found 1 issue\(s\)\. PR #42 created/
+      )
+    )
   })
 
   // -- Skip path (no changes) -----------------------------------------------
@@ -166,6 +175,13 @@ describe('main.ts — run()', () => {
     expect(core.setOutput).toHaveBeenCalledWith('files_changed', '0')
     expect(core.setOutput).toHaveBeenCalledWith('lines_changed', '0')
     expect(core.setFailed).not.toHaveBeenCalled()
+
+    // Verify structured log message (FR26 — Story 7.2)
+    expect(core.info).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /Scanned 1 files matching \*\*\. Found 0 issues\. No PR created\./
+      )
+    )
   })
 
   // -- Dry-run path ----------------------------------------------------------
@@ -199,27 +215,101 @@ describe('main.ts — run()', () => {
     expect(core.setFailed).not.toHaveBeenCalled()
   })
 
-  // -- Error path ------------------------------------------------------------
+  // -- Error path — structured error logging (FR27, Story 7.2) ---------------
 
-  it('sets failed when validateConfig throws', async () => {
+  it('logs config error details and sets failed on ConfigError', async () => {
     mockValidateConfig.mockImplementation(() => {
-      throw new Error('Missing required input: prompt')
+      throw new ConfigError("Missing required input: 'prompt'")
     })
 
     await run()
 
+    expect(core.error).toHaveBeenCalledWith(
+      expect.stringMatching(/Configuration error:.*Missing required input/)
+    )
     expect(core.setFailed).toHaveBeenCalledWith(
-      'Missing required input: prompt'
+      "Missing required input: 'prompt'"
     )
   })
 
-  it('sets failed when provider.chat throws (via withRetry)', async () => {
+  it('logs provider error details with provider name and status', async () => {
     mockHappyPath()
-    mockWithRetry.mockRejectedValue(new Error('Mistral API error (HTTP 500)'))
+    mockWithRetry.mockRejectedValue(
+      new ProviderError('Rate limit exceeded', 'mistral', 429)
+    )
 
     await run()
 
-    expect(core.setFailed).toHaveBeenCalledWith('Mistral API error (HTTP 500)')
+    expect(core.error).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /Provider error \[mistral\] \(HTTP 429\):.*Rate limit exceeded/
+      )
+    )
+    expect(core.setFailed).toHaveBeenCalledWith('Rate limit exceeded')
+  })
+
+  it('logs provider error without status code when not available', async () => {
+    mockHappyPath()
+    mockWithRetry.mockRejectedValue(
+      new ProviderError('Network timeout', 'openai')
+    )
+
+    await run()
+
+    expect(core.error).toHaveBeenCalledWith(
+      expect.stringMatching(/Provider error \[openai\]:.*Network timeout/)
+    )
+    expect(core.setFailed).toHaveBeenCalledWith('Network timeout')
+  })
+
+  it('logs guardrail violation details and sets failed', async () => {
+    mockHappyPath()
+    mockValidateChanges.mockImplementation(() => {
+      throw new GuardrailError(
+        'LLM response contains 15 file change(s), which exceeds the max_files limit of 10'
+      )
+    })
+
+    await run()
+
+    expect(core.error).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /Guardrail violation:.*exceeds the max_files limit of 10/
+      )
+    )
+    expect(core.setFailed).toHaveBeenCalledWith(
+      'LLM response contains 15 file change(s), which exceeds the max_files limit of 10'
+    )
+  })
+
+  it('logs git error details and sets failed', async () => {
+    mockHappyPath()
+    mockCommitAndPush.mockRejectedValue(
+      new GitError('git push failed (exit 128): rejected')
+    )
+
+    await run()
+
+    expect(core.error).toHaveBeenCalledWith(
+      expect.stringMatching(/Git operation failed:.*git push failed/)
+    )
+    expect(core.setFailed).toHaveBeenCalledWith(
+      'git push failed (exit 128): rejected'
+    )
+  })
+
+  it('logs parse error details and sets failed', async () => {
+    mockHappyPath()
+    mockParseResponse.mockImplementation(() => {
+      throw new ParseError('content is not valid JSON')
+    })
+
+    await run()
+
+    expect(core.error).toHaveBeenCalledWith(
+      expect.stringMatching(/Response parse error:.*content is not valid JSON/)
+    )
+    expect(core.setFailed).toHaveBeenCalledWith('content is not valid JSON')
   })
 
   it('handles non-Error thrown values', async () => {
@@ -230,18 +320,5 @@ describe('main.ts — run()', () => {
     await run()
 
     expect(core.setFailed).toHaveBeenCalledWith('string error')
-  })
-
-  it('sets failed when guardrails throw', async () => {
-    mockHappyPath()
-    mockValidateChanges.mockImplementation(() => {
-      throw new Error('exceeds the max_files limit of 10')
-    })
-
-    await run()
-
-    expect(core.setFailed).toHaveBeenCalledWith(
-      'exceeds the max_files limit of 10'
-    )
   })
 })

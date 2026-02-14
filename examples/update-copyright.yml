@@ -1,0 +1,48 @@
+# Update Copyright Year — Prompt2PR Example Workflow
+#
+# Updates copyright year in all source files to the current year.
+# Runs every January 2nd at 6:00 UTC and can be triggered manually.
+#
+# Setup:
+#   1. Copy this file to .github/workflows/update-copyright.yml
+#   2. Set your LLM provider API key as a GitHub Secret
+#   3. Adjust the paths to match your source file patterns
+
+name: Update Copyright Year
+
+on:
+  schedule:
+    # Run every January 2nd at 6:00 UTC
+    - cron: '0 6 2 1 *'
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: 'Custom prompt (optional — overrides default)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-copyright:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: Davphla/Prompt2PR@v1
+        with:
+          prompt: >-
+            ${{ github.event.inputs.prompt || 'Find all copyright year
+            references in source files and license files. Update any outdated
+            year to the current year (2026). Use the format "2024-2026" for
+            ranges. Do not change any other content.' }}
+          provider: 'anthropic'
+          paths: 'src/**,LICENSE,README.md'
+          max_files: 10
+          max_changes: 100
+          label: 'prompt2pr,copyright'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

@@ -1,0 +1,51 @@
+# Sync README — Prompt2PR Example Workflow
+#
+# Keeps the README in sync with the actual codebase. Detects mismatches
+# between documented API examples, configuration references, and actual code.
+# Runs weekly on Wednesday at 8:00 UTC and can be triggered manually.
+#
+# Setup:
+#   1. Copy this file to .github/workflows/sync-readme.yml
+#   2. Set your LLM provider API key as a GitHub Secret
+#   3. Adjust the paths to match your project layout
+
+name: Sync README
+
+on:
+  schedule:
+    # Run every Wednesday at 8:00 UTC
+    - cron: '0 8 * * 3'
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: 'Custom prompt (optional — overrides default)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync-readme:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: Davphla/Prompt2PR@v1
+        with:
+          prompt: >-
+            ${{ github.event.inputs.prompt || 'Compare the README.md with the
+            actual source code. Find any code examples, API references, or
+            configuration options in the README that are outdated or do not
+            match the current implementation. Update the README to accurately
+            reflect the code. Do not change source files — only update
+            README.md.' }}
+          provider: 'openai'
+          paths: 'src/**,README.md'
+          max_files: 1
+          max_changes: 200
+          label: 'prompt2pr,documentation'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}

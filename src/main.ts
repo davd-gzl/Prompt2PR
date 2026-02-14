@@ -1,6 +1,13 @@
 import * as core from '@actions/core'
 
 import { validateConfig } from './config.js'
+import {
+  ConfigError,
+  GuardrailError,
+  ProviderError,
+  GitError,
+  ParseError
+} from './errors.js'
 import { scanFiles } from './file-scanner.js'
 import { commitAndPush, buildBranchName } from './git-manager.js'
 import { validateChanges } from './guardrails.js'
@@ -34,6 +41,30 @@ function countLinesChanged(
   return total
 }
 
+/**
+ * Log structured error details based on the error type (FR27, NFR11).
+ */
+function logErrorDetails(error: unknown): void {
+  if (error instanceof ConfigError) {
+    log.error(`Configuration error: ${error.message}`)
+  } else if (error instanceof ProviderError) {
+    const statusInfo = error.statusCode ? ` (HTTP ${error.statusCode})` : ''
+    log.error(
+      `Provider error [${error.provider}]${statusInfo}: ${error.message}`
+    )
+  } else if (error instanceof GuardrailError) {
+    log.error(`Guardrail violation: ${error.message}`)
+  } else if (error instanceof GitError) {
+    log.error(`Git operation failed: ${error.message}`)
+  } else if (error instanceof ParseError) {
+    log.error(`Response parse error: ${error.message}`)
+  } else if (error instanceof Error) {
+    log.error(`Unexpected error: ${error.message}`)
+  } else {
+    log.error(`Unexpected error: ${String(error)}`)
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Main exported function
 // ---------------------------------------------------------------------------
@@ -57,7 +88,9 @@ export async function run(): Promise<void> {
 
     // Step 2: Scan files
     const files = await scanFiles(config.paths)
-    log.info(`Scanned ${files.length} file(s)`)
+    log.info(
+      `Scanned ${files.length} file(s) matching ${config.paths.join(', ')}`
+    )
 
     // Step 3: Build prompt
     const provider = createProvider(config)
@@ -73,7 +106,10 @@ export async function run(): Promise<void> {
 
     // Step 6: Check for empty changes (FR4, FR23)
     if (changes.length === 0) {
-      log.info('No changes needed — skipping PR creation')
+      log.info(
+        `Scanned ${files.length} files matching ${config.paths.join(', ')}. ` +
+          `Found 0 issues. No PR created.`
+      )
       core.setOutput('pr_url', '')
       core.setOutput('pr_number', '')
       core.setOutput('files_changed', '0')
@@ -129,8 +165,17 @@ export async function run(): Promise<void> {
     core.setOutput('lines_changed', String(linesChanged))
     core.setOutput('skipped', 'false')
 
-    log.info(`Prompt2PR completed: PR #${pr.number} created — ${pr.url}`)
+    // Step 13: Structured run summary (FR26)
+    log.info(
+      `Scanned ${files.length} files matching ${config.paths.join(', ')}. ` +
+        `Found ${validated.length} issue(s). ` +
+        `PR #${pr.number} created — ${pr.url} ` +
+        `(${validated.length} file(s), ${linesChanged} line(s) changed)`
+    )
   } catch (error) {
+    // Log structured error details for observability (FR27, NFR11)
+    logErrorDetails(error)
+
     // Fail the workflow run if an error occurs
     // Must handle both Error objects and other thrown values (NFR11: fail loudly)
     if (error instanceof Error) {
