@@ -14,6 +14,7 @@ import { ConfigError } from '../errors.js'
 import { createLogger } from '../logger.js'
 import { AnthropicProvider } from './anthropic-provider.js'
 import { MistralProvider } from './mistral-provider.js'
+import { OpenAIProvider } from './openai-provider.js'
 import type { LLMProvider } from './types.js'
 
 // ---------------------------------------------------------------------------
@@ -48,6 +49,9 @@ export function createProvider(config: ActionConfig): LLMProvider {
       break
     case 'anthropic':
       instance = new AnthropicProvider(apiKey, baseUrl)
+      break
+    case 'openai':
+      instance = new OpenAIProvider(apiKey, baseUrl)
       break
     default:
       throw new ConfigError(
