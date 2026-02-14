@@ -1,0 +1,8 @@
+[extend]
+
+[[allowlist.paths]]
+description = "Test files may contain fake API keys"
+paths = [
+  '''__tests__/.*\.test\.ts$''',
+  '''__fixtures__/.*'''
+]
