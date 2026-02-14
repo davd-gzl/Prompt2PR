@@ -89,7 +89,7 @@ export async function run(): Promise<void> {
     // Step 2: Scan files
     const files = await scanFiles(config.paths)
     log.info(
-      `Scanned ${files.length} file(s) matching ${config.paths.join(', ')}`
+      `Scanned ${files.length} files matching ${config.paths.join(', ')}`
     )
 
     // Step 3: Build prompt
