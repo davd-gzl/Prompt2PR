@@ -27376,7 +27376,12 @@ class ParseError extends Error {
 /**
  * Valid LLM provider names.
  */
-const VALID_PROVIDERS = ['mistral', 'openai', 'anthropic'];
+const VALID_PROVIDERS = [
+    'mistral',
+    'openai',
+    'anthropic',
+    'github'
+];
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
@@ -27390,7 +27395,8 @@ const DEFAULT_LABEL = 'prompt2pr';
 const API_KEY_ENV_VARS = {
     mistral: 'MISTRAL_API_KEY',
     openai: 'OPENAI_API_KEY',
-    anthropic: 'ANTHROPIC_API_KEY'
+    anthropic: 'ANTHROPIC_API_KEY',
+    github: 'GITHUB_TOKEN'
 };
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -27445,7 +27451,7 @@ function validateConfig() {
     }
     const providerRaw = coreExports.getInput('provider', { required: true });
     if (!providerRaw) {
-        throw new ConfigError("Missing required input: 'provider'. Supported values: mistral, openai, anthropic.");
+        throw new ConfigError("Missing required input: 'provider'. Supported values: mistral, openai, anthropic, github.");
     }
     if (!isValidProvider(providerRaw)) {
         throw new ConfigError(`Invalid provider: '${providerRaw}'. Supported values: ${VALID_PROVIDERS.join(', ')}.`);
@@ -57290,7 +57296,7 @@ const BINARY_EXTENSIONS = new Set([
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
-const log$a = createLogger$1('scanner');
+const log$b = createLogger$1('scanner');
 /**
  * Check if a file path has a known binary extension.
  */
@@ -57319,7 +57325,7 @@ function toRelativePosix(filePath, workDir) {
  * @returns Array of file contexts for matched files.
  */
 async function scanFiles(patterns, workDir = process.cwd()) {
-    log$a.info(`Scanning files with patterns: ${patterns.join(', ')} in ${workDir}`);
+    log$b.info(`Scanning files with patterns: ${patterns.join(', ')} in ${workDir}`);
     // Build the glob pattern string:
     // Include user patterns, then negate always-excluded patterns
     const includePatterns = patterns.map((p) => path$1.join(workDir, p));
@@ -57329,7 +57335,7 @@ async function scanFiles(patterns, workDir = process.cwd()) {
         followSymbolicLinks: false
     });
     const matchedPaths = await globber.glob();
-    log$a.info(`Glob matched ${matchedPaths.length} paths`);
+    log$b.info(`Glob matched ${matchedPaths.length} paths`);
     const results = [];
     let excludedBinary = 0;
     let excludedDirectory = 0;
@@ -57361,10 +57367,10 @@ async function scanFiles(patterns, workDir = process.cwd()) {
             });
         }
         catch {
-            log$a.warn(`Could not read file: ${relativePath}, skipping`);
+            log$b.warn(`Could not read file: ${relativePath}, skipping`);
         }
     }
-    log$a.info(`Scan complete: ${results.length} files loaded, ` +
+    log$b.info(`Scan complete: ${results.length} files loaded, ` +
         `${excludedBinary} binary files skipped, ` +
         `${excludedDirectory} directories skipped` +
         (excludedGitHub > 0 ? `, ${excludedGitHub} .github/ files excluded` : ''));
@@ -57385,7 +57391,7 @@ var execExports = requireExec();
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
-const log$9 = createLogger$1('git');
+const log$a = createLogger$1('git');
 /**
  * Run a git command and return the trimmed stdout.
  * Throws `GitError` on non-zero exit codes.
@@ -57449,7 +57455,7 @@ async function applyChanges(changes, workDir) {
             throw new GitError(`Path traversal detected: '${change.path}' resolves outside the working directory`);
         }
         if (change.action === 'delete') {
-            log$9.info(`Deleting file: ${change.path}`);
+            log$a.info(`Deleting file: ${change.path}`);
             try {
                 await fs$1.unlink(absPath);
             }
@@ -57459,7 +57465,7 @@ async function applyChanges(changes, workDir) {
         }
         else {
             // create or modify
-            log$9.info(`Writing file: ${change.path} (${change.action})`);
+            log$a.info(`Writing file: ${change.path} (${change.action})`);
             try {
                 // Ensure parent directory exists
                 await fs$1.mkdir(path$1.dirname(absPath), { recursive: true });
@@ -57480,22 +57486,22 @@ async function applyChanges(changes, workDir) {
  * @param workDir - The repository working directory.
  */
 async function commitAndPush(changes, branchName, commitMessage, workDir) {
-    log$9.info(`Creating branch: ${branchName}`);
+    log$a.info(`Creating branch: ${branchName}`);
     // Create and checkout new branch
     await git(['checkout', '-b', branchName], workDir);
     // Apply file changes to disk
     await applyChanges(changes, workDir);
     // Stage all changed files
     const filePaths = changes.map((c) => c.path);
-    log$9.info(`Staging ${filePaths.length} file(s)`);
+    log$a.info(`Staging ${filePaths.length} file(s)`);
     await git(['add', ...filePaths], workDir);
     // Commit
-    log$9.info(`Committing: ${commitMessage}`);
+    log$a.info(`Committing: ${commitMessage}`);
     await git(['commit', '-m', commitMessage], workDir);
     // Push
-    log$9.info(`Pushing branch ${branchName} to origin`);
+    log$a.info(`Pushing branch ${branchName} to origin`);
     await git(['push', 'origin', branchName], workDir);
-    log$9.info('Git operations completed successfully');
+    log$a.info('Git operations completed successfully');
 }
 
 /**
@@ -57510,7 +57516,7 @@ async function commitAndPush(changes, branchName, commitMessage, workDir) {
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
-const log$8 = createLogger$1('guardrails');
+const log$9 = createLogger$1('guardrails');
 /**
  * Count the total number of lines changed across all file changes.
  * For creates/modifies, count the number of lines in the new content.
@@ -57592,7 +57598,7 @@ function matchesPatterns(filePath, patterns) {
  * @throws {GuardrailError} If any limit is violated.
  */
 function validateChanges(changes, config) {
-    log$8.info(`Validating ${changes.length} file change(s) against guardrails`);
+    log$9.info(`Validating ${changes.length} file change(s) against guardrails`);
     // --- Check path traversal (security) ---
     for (const change of changes) {
         // Reject absolute paths
@@ -57636,7 +57642,7 @@ function validateChanges(changes, config) {
             `which exceeds the max_changes limit of ${config.maxChanges}. ` +
             `Increase the 'max_changes' input or ask the LLM to make smaller changes.`);
     }
-    log$8.info(`Guardrails passed: ${changes.length} file(s), ${totalLines} line(s) changed`);
+    log$9.info(`Guardrails passed: ${changes.length} file(s), ${totalLines} line(s) changed`);
     return changes;
 }
 
@@ -61613,7 +61619,7 @@ var githubExports = requireGithub();
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
-const log$7 = createLogger$1('pr-creator');
+const log$8 = createLogger$1('pr-creator');
 /**
  * Build the PR title with the [Prompt2PR] prefix and a summary.
  */
@@ -61678,7 +61684,7 @@ async function createPullRequest(changes, branchName, config, metadata, token) {
     const defaultBranch = githubExports.context.payload.repository?.default_branch ?? 'main';
     const title = buildTitle(changes);
     const body = buildBody(config.prompt, changes, metadata);
-    log$7.info(`Creating PR: "${title}" (${branchName} → ${defaultBranch})`);
+    log$8.info(`Creating PR: "${title}" (${branchName} → ${defaultBranch})`);
     const octokit = githubExports.getOctokit(token);
     let prNumber;
     let prUrl;
@@ -61693,14 +61699,14 @@ async function createPullRequest(changes, branchName, config, metadata, token) {
         });
         prNumber = pr.number;
         prUrl = pr.html_url;
-        log$7.info(`PR created: #${prNumber} — ${prUrl}`);
+        log$8.info(`PR created: #${prNumber} — ${prUrl}`);
     }
     catch (error) {
         throw new GitError(`Failed to create Pull Request: ${error instanceof Error ? error.message : String(error)}`);
     }
     // Apply labels
     if (config.labels.length > 0) {
-        log$7.info(`Applying labels: ${config.labels.join(', ')}`);
+        log$8.info(`Applying labels: ${config.labels.join(', ')}`);
         try {
             await octokit.rest.issues.addLabels({
                 owner,
@@ -61711,7 +61717,7 @@ async function createPullRequest(changes, branchName, config, metadata, token) {
         }
         catch (error) {
             // Label failure is non-fatal — log a warning but don't fail the action
-            log$7.warn(`Failed to apply labels: ${error instanceof Error ? error.message : String(error)}`);
+            log$8.warn(`Failed to apply labels: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
     return { url: prUrl, number: prNumber };
@@ -61767,7 +61773,7 @@ Rules:
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
-const log$6 = createLogger$1('prompt-assembler');
+const log$7 = createLogger$1('prompt-assembler');
 /**
  * Format a single file's content as a clearly delimited block.
  */
@@ -61791,7 +61797,7 @@ function formatFileBlock(file) {
  * @returns A `ChatRequest` ready to send to an LLM provider.
  */
 function buildPrompt(userPrompt, files, model = '', maxContextChars = DEFAULT_MAX_CONTEXT_CHARS) {
-    log$6.info(`Assembling prompt: ${files.length} files, ` +
+    log$7.info(`Assembling prompt: ${files.length} files, ` +
         `budget=${maxContextChars} chars`);
     // Start with the fixed overhead of the system prompt + user prompt
     const systemMessage = {
@@ -61828,15 +61834,15 @@ function buildPrompt(userPrompt, files, model = '', maxContextChars = DEFAULT_MA
                 userContent += `\n${truncatedBlock}`;
                 totalChars += truncatedBlock.length + 1;
                 truncatedCount++;
-                log$6.warn(`Truncated file ${file.path} (${file.size} bytes → ${contentBudget} chars)`);
+                log$7.warn(`Truncated file ${file.path} (${file.size} bytes → ${contentBudget} chars)`);
             }
             else {
                 excludedCount++;
-                log$6.warn(`Excluded file ${file.path} (${file.size} bytes) — context budget exhausted`);
+                log$7.warn(`Excluded file ${file.path} (${file.size} bytes) — context budget exhausted`);
             }
         }
     }
-    log$6.info(`Prompt assembled: ${includedCount} included, ` +
+    log$7.info(`Prompt assembled: ${includedCount} included, ` +
         `${truncatedCount} truncated, ${excludedCount} excluded, ` +
         `${totalChars} total chars`);
     const userMessage = {
@@ -61862,19 +61868,19 @@ function buildPrompt(userPrompt, files, model = '', maxContextChars = DEFAULT_MA
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-const DEFAULT_BASE_URL$2 = 'https://api.anthropic.com';
-const DEFAULT_MODEL$2 = 'claude-sonnet-4-20250514';
+const DEFAULT_BASE_URL$3 = 'https://api.anthropic.com';
+const DEFAULT_MODEL$3 = 'claude-sonnet-4-20250514';
 const ANTHROPIC_VERSION = '2023-06-01';
-const TIMEOUT_MS$2 = 120_000; // 120 seconds (NFR2)
+const TIMEOUT_MS$3 = 120_000; // 120 seconds (NFR2)
 const MAX_TOKENS = 4096;
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
-const log$5 = createLogger$1('provider:anthropic');
+const log$6 = createLogger$1('provider:anthropic');
 /**
  * Map Anthropic API error responses to descriptive messages.
  */
-function formatApiError$2(status, body) {
+function formatApiError$3(status, body) {
     const prefix = `Anthropic API error (HTTP ${status})`;
     try {
         const parsed = JSON.parse(body);
@@ -61904,12 +61910,12 @@ function formatApiError$2(status, body) {
  */
 class AnthropicProvider {
     name = 'anthropic';
-    defaultModel = DEFAULT_MODEL$2;
+    defaultModel = DEFAULT_MODEL$3;
     apiKey;
     baseUrl;
     constructor(apiKey, baseUrl) {
         this.apiKey = apiKey;
-        this.baseUrl = baseUrl || DEFAULT_BASE_URL$2;
+        this.baseUrl = baseUrl || DEFAULT_BASE_URL$3;
     }
     /**
      * Send a messages request to Anthropic's API.
@@ -61925,7 +61931,7 @@ class AnthropicProvider {
     async chat(request) {
         const model = request.model || this.defaultModel;
         const url = `${this.baseUrl}/v1/messages`;
-        log$5.info(`Sending request to ${url} with model '${model}'`);
+        log$6.info(`Sending request to ${url} with model '${model}'`);
         // Transform ChatRequest into Anthropic format
         // Extract system prompt from messages, send user messages separately
         const systemMessage = request.messages.find((m) => m.role === 'system');
@@ -61949,12 +61955,12 @@ class AnthropicProvider {
                     'anthropic-version': ANTHROPIC_VERSION
                 },
                 body,
-                signal: AbortSignal.timeout(TIMEOUT_MS$2)
+                signal: AbortSignal.timeout(TIMEOUT_MS$3)
             });
         }
         catch (error) {
             if (error instanceof DOMException && error.name === 'TimeoutError') {
-                throw new ProviderError(`Anthropic API request timed out after ${TIMEOUT_MS$2 / 1000} seconds`, this.name);
+                throw new ProviderError(`Anthropic API request timed out after ${TIMEOUT_MS$3 / 1000} seconds`, this.name);
             }
             if (error instanceof TypeError) {
                 throw new ProviderError(`Anthropic API network error: ${error.message}`, this.name);
@@ -61963,7 +61969,7 @@ class AnthropicProvider {
         }
         if (!response.ok) {
             const errorBody = await response.text();
-            const message = formatApiError$2(response.status, errorBody);
+            const message = formatApiError$3(response.status, errorBody);
             if (response.status === 429) {
                 const retryAfter = response.headers.get('retry-after');
                 const retryInfo = retryAfter ? ` (retry after ${retryAfter}s)` : '';
@@ -61973,7 +61979,7 @@ class AnthropicProvider {
         }
         // Parse the successful response
         const responseBody = await response.json();
-        log$5.debug(`Raw response: ${JSON.stringify(responseBody).slice(0, 500)}`);
+        log$6.debug(`Raw response: ${JSON.stringify(responseBody).slice(0, 500)}`);
         return this.parseResponse(responseBody);
     }
     /**
@@ -62024,7 +62030,169 @@ class AnthropicProvider {
             throw new ProviderError('Malformed Anthropic response: expected { files: [...] } structure', this.name);
         }
         const files = parsed.files;
-        log$5.info(`Received ${files.length} file change(s) from Anthropic`);
+        log$6.info(`Received ${files.length} file change(s) from Anthropic`);
+        return { files };
+    }
+}
+
+/**
+ * GitHub Models LLM provider for Prompt2PR.
+ *
+ * Implements the `LLMProvider` interface for the GitHub Models inference API.
+ * The API is OpenAI-compatible but uses a different base URL and endpoint path.
+ * Models are referenced with a `publisher/model-name` format (e.g. `openai/gpt-4o`).
+ *
+ * Authentication uses a GitHub token (PAT with `models:read` or `GITHUB_TOKEN`
+ * in Actions with `models: read` permission).
+ *
+ * @see https://docs.github.com/en/github-models
+ */
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+const DEFAULT_BASE_URL$2 = 'https://models.github.ai';
+const ENDPOINT_PATH = '/inference/chat/completions';
+const DEFAULT_MODEL$2 = 'openai/gpt-4o';
+const TIMEOUT_MS$2 = 120_000; // 120 seconds (NFR2)
+// ---------------------------------------------------------------------------
+// Internal helpers
+// ---------------------------------------------------------------------------
+const log$5 = createLogger$1('provider:github');
+/**
+ * Map GitHub Models API error responses to descriptive messages.
+ */
+function formatApiError$2(status, body) {
+    const prefix = `GitHub Models API error (HTTP ${status})`;
+    try {
+        const parsed = JSON.parse(body);
+        if (typeof parsed === 'object' &&
+            parsed !== null &&
+            'error' in parsed &&
+            typeof parsed.error === 'object') {
+            const errorObj = parsed.error;
+            if (typeof errorObj.message === 'string') {
+                return `${prefix}: ${errorObj.message}`;
+            }
+        }
+    }
+    catch {
+        // Body is not JSON — use raw body
+    }
+    return `${prefix}: ${body.slice(0, 200)}`;
+}
+// ---------------------------------------------------------------------------
+// Provider implementation
+// ---------------------------------------------------------------------------
+/**
+ * GitHub Models LLM provider.
+ *
+ * Sends chat completion requests to the GitHub Models inference API and
+ * parses OpenAI-compatible responses into the shared `LLMResponse` format.
+ */
+class GitHubModelsProvider {
+    name = 'github';
+    defaultModel = DEFAULT_MODEL$2;
+    apiKey;
+    baseUrl;
+    constructor(apiKey, baseUrl) {
+        this.apiKey = apiKey;
+        this.baseUrl = baseUrl || DEFAULT_BASE_URL$2;
+    }
+    /**
+     * Send a chat completion request to GitHub Models API.
+     *
+     * @param request - The chat request with model and messages.
+     * @returns The parsed LLM response containing file changes.
+     * @throws {ProviderError} On API errors, timeouts, or malformed responses.
+     */
+    async chat(request) {
+        const model = request.model || this.defaultModel;
+        const url = `${this.baseUrl}${ENDPOINT_PATH}`;
+        log$5.info(`Sending request to ${url} with model '${model}'`);
+        const body = JSON.stringify({
+            model,
+            messages: request.messages,
+            response_format: { type: 'json_object' }
+        });
+        let response;
+        try {
+            response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${this.apiKey}`
+                },
+                body,
+                signal: AbortSignal.timeout(TIMEOUT_MS$2)
+            });
+        }
+        catch (error) {
+            if (error instanceof DOMException && error.name === 'TimeoutError') {
+                throw new ProviderError(`GitHub Models API request timed out after ${TIMEOUT_MS$2 / 1000} seconds`, this.name);
+            }
+            if (error instanceof TypeError) {
+                throw new ProviderError(`GitHub Models API network error: ${error.message}`, this.name);
+            }
+            throw new ProviderError(`GitHub Models API request failed: ${String(error)}`, this.name);
+        }
+        if (!response.ok) {
+            const errorBody = await response.text();
+            const message = formatApiError$2(response.status, errorBody);
+            if (response.status === 429) {
+                const retryAfter = response.headers.get('retry-after');
+                const retryInfo = retryAfter ? ` (retry after ${retryAfter}s)` : '';
+                throw new ProviderError(`${message}${retryInfo}`, this.name, response.status);
+            }
+            throw new ProviderError(message, this.name, response.status);
+        }
+        // Parse the successful response
+        const responseBody = await response.json();
+        log$5.debug(`Raw response: ${JSON.stringify(responseBody).slice(0, 500)}`);
+        return this.parseResponse(responseBody);
+    }
+    /**
+     * Transform the OpenAI-compatible response format into the shared LLMResponse.
+     */
+    parseResponse(body) {
+        // Response shape (OpenAI-compatible):
+        // { choices: [{ message: { content: "..." } }] }
+        if (typeof body !== 'object' ||
+            body === null ||
+            !('choices' in body) ||
+            !Array.isArray(body.choices)) {
+            throw new ProviderError('Malformed GitHub Models response: missing "choices" array', this.name);
+        }
+        const choices = body.choices;
+        if (choices.length === 0) {
+            throw new ProviderError('Malformed GitHub Models response: empty "choices" array', this.name);
+        }
+        const firstChoice = choices[0];
+        if (!firstChoice ||
+            typeof firstChoice !== 'object' ||
+            !('message' in firstChoice)) {
+            throw new ProviderError('Malformed GitHub Models response: missing "message" in first choice', this.name);
+        }
+        const message = firstChoice.message;
+        if (typeof message.content !== 'string') {
+            throw new ProviderError('Malformed GitHub Models response: "content" is not a string', this.name);
+        }
+        // Parse the JSON content from the LLM
+        let parsed;
+        try {
+            parsed = JSON.parse(message.content);
+        }
+        catch {
+            throw new ProviderError(`Malformed GitHub Models response: content is not valid JSON — ${message.content.slice(0, 200)}`, this.name);
+        }
+        // Validate the expected shape: { files: [...] }
+        if (typeof parsed !== 'object' ||
+            parsed === null ||
+            !('files' in parsed) ||
+            !Array.isArray(parsed.files)) {
+            throw new ProviderError('Malformed GitHub Models response: expected { files: [...] } structure', this.name);
+        }
+        const files = parsed.files;
+        log$5.info(`Received ${files.length} file change(s) from GitHub Models`);
         return { files };
     }
 }
@@ -62385,9 +62553,12 @@ function createProvider(config) {
         case 'openai':
             instance = new OpenAIProvider(apiKey, baseUrl);
             break;
+        case 'github':
+            instance = new GitHubModelsProvider(apiKey, baseUrl);
+            break;
         default:
             throw new ConfigError(`Unsupported provider: '${provider}'. ` +
-                `Supported providers: mistral, openai, anthropic.`);
+                `Supported providers: mistral, openai, anthropic, github.`);
     }
     // Resolve the model: user's choice or provider default
     const resolvedModel = model || instance.defaultModel;

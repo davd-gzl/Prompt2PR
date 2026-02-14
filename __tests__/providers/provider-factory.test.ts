@@ -17,6 +17,8 @@ const { AnthropicProvider } =
   await import('../../src/providers/anthropic-provider.js')
 const { OpenAIProvider } =
   await import('../../src/providers/openai-provider.js')
+const { GitHubModelsProvider } =
+  await import('../../src/providers/github-models-provider.js')
 const { ConfigError } = await import('../../src/errors.js')
 
 // ---------------------------------------------------------------------------
@@ -79,6 +81,15 @@ describe('provider-factory.ts — createProvider()', () => {
     expect(provider).toBeInstanceOf(OpenAIProvider)
     expect(provider.name).toBe('openai')
     expect(provider.defaultModel).toBe('gpt-4o')
+  })
+
+  it('creates a GitHubModelsProvider for provider "github"', () => {
+    const config = makeConfig({ provider: 'github' })
+    const provider = createProvider(config)
+
+    expect(provider).toBeInstanceOf(GitHubModelsProvider)
+    expect(provider.name).toBe('github')
+    expect(provider.defaultModel).toBe('openai/gpt-4o')
   })
 
   // -- Unknown provider error -----------------------------------------------

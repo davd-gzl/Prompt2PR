@@ -58,7 +58,7 @@ All inputs are configured via the standard GitHub Actions `with:` syntax.
 | Input           | Required | Default       | Description                                                                                            |
 | --------------- | -------- | ------------- | ------------------------------------------------------------------------------------------------------ |
 | `prompt`        | **yes**  | —             | Plain-English prompt describing what changes to make. Sent to the LLM along with scoped file contents. |
-| `provider`      | **yes**  | —             | LLM provider to use: `mistral`, `openai`, or `anthropic`.                                              |
+| `provider`      | **yes**  | —             | LLM provider to use: `mistral`, `openai`, `anthropic`, or `github`.                                    |
 | `model`         | no       | _(see below)_ | Model identifier. If omitted, the provider's default model is used.                                    |
 | `paths`         | no       | `**`          | Comma-separated glob patterns for files to include as context and allow modifications.                 |
 | `max_files`     | no       | `10`          | Maximum number of files the LLM may modify in a single run.                                            |
@@ -75,6 +75,7 @@ All inputs are configured via the standard GitHub Actions `with:` syntax.
 | `mistral`   | `mistral-large-latest`     |
 | `openai`    | `gpt-4o`                   |
 | `anthropic` | `claude-sonnet-4-20250514` |
+| `github`    | `openai/gpt-4o`            |
 
 ---
 
@@ -129,6 +130,40 @@ Use outputs in downstream steps:
 2. Navigate to **API Keys** and create a new key.
 3. In your GitHub repo, add `ANTHROPIC_API_KEY` as a GitHub Secret.
 4. Set `provider: anthropic` in your workflow.
+
+### GitHub Models
+
+Use LLMs directly through GitHub's built-in Models API — no external API key
+needed. This works with any GitHub Copilot subscription.
+
+1. Ensure your GitHub account has access to
+   [GitHub Models](https://github.com/marketplace/models).
+2. No additional secrets required — the built-in `GITHUB_TOKEN` is used for
+   authentication.
+3. Add `models: read` to your workflow permissions.
+4. Set `provider: github` and use models in `publisher/model-name` format (e.g.,
+   `openai/gpt-4o`, `anthropic/claude-sonnet-4.5`).
+
+```yaml
+permissions:
+  contents: write
+  pull-requests: write
+  models: read
+
+jobs:
+  prompt2pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Davphla/Prompt2PR@v1
+        with:
+          prompt: 'Fix typos in README.md'
+          provider: github
+          model: openai/gpt-4o
+          paths: 'README.md'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
 
 ---
 

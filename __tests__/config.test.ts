@@ -158,7 +158,7 @@ describe('config.ts — validateConfig()', () => {
 
     expect(() => validateConfig()).toThrow(ConfigError)
     expect(() => validateConfig()).toThrow(/gemini/)
-    expect(() => validateConfig()).toThrow(/mistral, openai, anthropic/)
+    expect(() => validateConfig()).toThrow(/mistral, openai, anthropic, github/)
   })
 
   // -- 4.7: max_files non-numeric -----------------------------------------
@@ -239,6 +239,14 @@ describe('config.ts — validateConfig()', () => {
     expect(() => validateConfig()).toThrow(/ANTHROPIC_API_KEY/)
   })
 
+  it('throws ConfigError for missing GitHub token', () => {
+    mockValidInputs({ provider: 'github' })
+    delete process.env.GITHUB_TOKEN
+
+    expect(() => validateConfig()).toThrow(ConfigError)
+    expect(() => validateConfig()).toThrow(/GITHUB_TOKEN/)
+  })
+
   // -- 4.12: Paths parsing -----------------------------------------------
 
   it('parses comma-separated paths with whitespace trimming', () => {
@@ -310,7 +318,12 @@ describe('config.ts — validateConfig()', () => {
 
   // -- VALID_PROVIDERS export ---------------------------------------------
 
-  it('exports VALID_PROVIDERS with all three providers', () => {
-    expect(VALID_PROVIDERS).toEqual(['mistral', 'openai', 'anthropic'])
+  it('exports VALID_PROVIDERS with all four providers', () => {
+    expect(VALID_PROVIDERS).toEqual([
+      'mistral',
+      'openai',
+      'anthropic',
+      'github'
+    ])
   })
 })

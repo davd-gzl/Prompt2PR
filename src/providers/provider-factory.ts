@@ -13,6 +13,7 @@ import type { ActionConfig } from '../config.js'
 import { ConfigError } from '../errors.js'
 import { createLogger } from '../logger.js'
 import { AnthropicProvider } from './anthropic-provider.js'
+import { GitHubModelsProvider } from './github-models-provider.js'
 import { MistralProvider } from './mistral-provider.js'
 import { OpenAIProvider } from './openai-provider.js'
 import type { LLMProvider } from './types.js'
@@ -53,10 +54,13 @@ export function createProvider(config: ActionConfig): LLMProvider {
     case 'openai':
       instance = new OpenAIProvider(apiKey, baseUrl)
       break
+    case 'github':
+      instance = new GitHubModelsProvider(apiKey, baseUrl)
+      break
     default:
       throw new ConfigError(
         `Unsupported provider: '${provider as string}'. ` +
-          `Supported providers: mistral, openai, anthropic.`
+          `Supported providers: mistral, openai, anthropic, github.`
       )
   }
 

@@ -18,7 +18,12 @@ import { ConfigError } from './errors.js'
 /**
  * Valid LLM provider names.
  */
-export const VALID_PROVIDERS = ['mistral', 'openai', 'anthropic'] as const
+export const VALID_PROVIDERS = [
+  'mistral',
+  'openai',
+  'anthropic',
+  'github'
+] as const
 
 /**
  * Union type derived from VALID_PROVIDERS.
@@ -69,7 +74,8 @@ const DEFAULT_LABEL = 'prompt2pr'
 const API_KEY_ENV_VARS: Record<ProviderName, string> = {
   mistral: 'MISTRAL_API_KEY',
   openai: 'OPENAI_API_KEY',
-  anthropic: 'ANTHROPIC_API_KEY'
+  anthropic: 'ANTHROPIC_API_KEY',
+  github: 'GITHUB_TOKEN'
 }
 
 // ---------------------------------------------------------------------------
@@ -145,7 +151,7 @@ export function validateConfig(): ActionConfig {
   const providerRaw = core.getInput('provider', { required: true })
   if (!providerRaw) {
     throw new ConfigError(
-      "Missing required input: 'provider'. Supported values: mistral, openai, anthropic."
+      "Missing required input: 'provider'. Supported values: mistral, openai, anthropic, github."
     )
   }
 

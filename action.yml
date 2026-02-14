@@ -16,14 +16,15 @@ inputs:
 
   provider:
     description: >-
-      The LLM provider to use. Supported values: mistral, openai, anthropic.
+      The LLM provider to use. Supported values: mistral, openai, anthropic,
+      github.
     required: true
 
   model:
     description: >-
       The model identifier to use. If not specified, the provider's default
       model is used (e.g., mistral-large-latest, gpt-4o,
-      claude-sonnet-4-20250514).
+      claude-sonnet-4-20250514, openai/gpt-4o).
     required: false
     default: ''
 

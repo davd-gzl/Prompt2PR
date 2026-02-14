@@ -21,12 +21,10 @@ jobs:
       - uses: ./
         with:
           prompt: ${{ github.event.inputs.prompt }}
-          provider: openai
-          model: gpt-4o
+          provider: github
+          model: openai/gpt-4o
           paths: 'README.md'
           max_files: 5
           max_changes: 100
-          base_url: https://models.inference.ai.azure.com
         env:
-          OPENAI_API_KEY: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
