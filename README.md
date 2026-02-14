@@ -284,6 +284,14 @@ permissions:
   pull-requests: write
 ```
 
+You must also enable PR creation at the repository level: go to _Settings →
+Actions → General → Workflow permissions_ and check **"Allow GitHub Actions to
+create and approve pull requests"**. Without this, the action will fail with:
+
+```text
+GitHub Actions is not permitted to create or approve pull requests.
+```
+
 ### Guardrail violations
 
 ```text
