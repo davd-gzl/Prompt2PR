@@ -4,8 +4,8 @@
 [![Coverage](./badges/coverage.svg)](./badges/coverage.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-> A GitHub Action that turns plain-English prompts into Pull Requests using
-> LLMs. Point it at files, describe what to fix, and get an automated PR.
+> A GitHub Action that turns prompts into Pull Requests using LLMs.
+> Point it at files, describe what to fix, and get an automated PR.
 
 ---
 
@@ -15,9 +15,9 @@ Get a working Prompt2PR workflow in under 5 minutes:
 
 1. **Get an API key** from your LLM provider (see
    [Provider Setup](#provider-setup) below).
-1. **Add the key as a GitHub Secret** in your repository under _Settings →
+2. **Add the key as a GitHub Secret** in your repository under _Settings →
    Secrets and variables → Actions_ (e.g., `MISTRAL_API_KEY`).
-1. **Create a workflow file** at `.github/workflows/prompt2pr.yml`:
+3. **Create a workflow file** at `.github/workflows/prompt2pr.yml`:
 
 ```yaml
 name: Prompt2PR
@@ -46,8 +46,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-1. **Trigger the workflow** from the _Actions_ tab → _Prompt2PR_ → _Run
-   workflow_, enter your prompt, and watch the PR appear.
+4. **Trigger the workflow** from the _Actions_ tab → _Prompt2PR_ → _Run
+   workflow_, enter your prompt, and watch the PR appear. You can also automate
+   it with a [cron schedule](#scheduling).
 
 ---
 
@@ -118,6 +119,157 @@ The action sets several outputs you can use in downstream steps.
 
 ---
 
+## Scheduling & Triggers
+
+Prompt2PR is a standard GitHub Action — it works with **any trigger** you'd use
+in normal CI. The `prompt` can be hardcoded in the workflow file, typed in
+manually, or pulled from event context (commit message, issue body, comment,
+etc.).
+
+### On Push
+
+Run automatically when code is pushed, just like a linter or test suite:
+
+```yaml
+on:
+  push:
+    branches: [main]
+    paths: ['src/**']
+
+jobs:
+  prompt2pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: davd-gzl/Prompt2PR@v1
+        with:
+          prompt: 'Review recent changes for bugs, dead imports, and code smells. Fix any issues.'
+          provider: mistral
+          paths: 'src/**'
+        env:
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+### Cron Schedule
+
+Run automatically on a recurring schedule:
+
+```yaml
+on:
+  schedule:
+    # Every Monday at 9:00 UTC
+    - cron: '0 9 * * 1'
+```
+
+### Manual Trigger
+
+Run on demand from the Actions tab:
+
+```yaml
+on:
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: 'What should the AI fix?'
+        required: true
+```
+
+### Both
+
+Combine a schedule with a manual override:
+
+```yaml
+on:
+  schedule:
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: 'Custom prompt (optional)'
+        required: false
+        default: ''
+```
+
+### From Issues or Comments
+
+Use event context as the prompt — for example, trigger from an issue body:
+
+```yaml
+on:
+  issues:
+    types: [opened, labeled]
+
+jobs:
+  prompt2pr:
+    if: contains(github.event.issue.labels.*.name, 'prompt2pr')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: davd-gzl/Prompt2PR@v1
+        with:
+          prompt: ${{ github.event.issue.body }}
+          provider: mistral
+        env:
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+---
+
+## Examples
+
+Ready-to-use workflow files organized by use case in the
+[`examples/`](examples/) directory. Copy any file to `.github/workflows/` in
+your repository. See each category's README for detailed descriptions.
+
+> **Providers are interchangeable.** Each example uses a specific provider, but
+> you can swap `provider:` and the corresponding API key to use any supported
+> provider.
+
+### Code Quality
+
+Improve code structure, safety, and standards compliance.
+
+| Workflow                                                                 | Description                                              | Trigger      |
+| ------------------------------------------------------------------------ | -------------------------------------------------------- | ------------ |
+| [enforce-style-guide.yml](examples/code-quality/enforce-style-guide.yml) | Fix naming conventions, add JSDoc, replace magic numbers | Push to main |
+| [add-error-handling.yml](examples/code-quality/add-error-handling.yml)   | Add try/catch blocks and input validation                | Manual       |
+| [deprecation-cleanup.yml](examples/code-quality/deprecation-cleanup.yml) | Replace deprecated APIs with modern alternatives         | Monthly cron |
+| [generate-tests.yml](examples/code-quality/generate-tests.yml)           | Generate unit tests for untested functions               | Weekly cron  |
+
+### Documentation
+
+Keep your docs accurate and up to date.
+
+| Workflow                                                            | Description                                   | Trigger     |
+| ------------------------------------------------------------------- | --------------------------------------------- | ----------- |
+| [sync-readme.yml](examples/documentation/sync-readme.yml)           | Keep README in sync with actual source code   | Weekly cron |
+| [translate-docs.yml](examples/documentation/translate-docs.yml)     | Translate markdown docs into another language | Manual      |
+| [update-copyright.yml](examples/documentation/update-copyright.yml) | Update copyright year across all files        | Yearly cron |
+
+### Maintenance
+
+Handle routine cleanup and housekeeping.
+
+| Workflow                                                        | Description                                 | Trigger     |
+| --------------------------------------------------------------- | ------------------------------------------- | ----------- |
+| [cleanup-todos.yml](examples/maintenance/cleanup-todos.yml)     | Remove resolved TODO/FIXME/HACK comments    | Weekly cron |
+| [improve-logging.yml](examples/maintenance/improve-logging.yml) | Replace console.log with structured logging | Manual      |
+| [fix-dead-links.yml](examples/maintenance/fix-dead-links.yml)   | Find and fix broken links in markdown files | Weekly cron |
+
+### Automation
+
+Event-driven workflows and change previews.
+
+| Workflow                                                               | Description                                             | Trigger       |
+| ---------------------------------------------------------------------- | ------------------------------------------------------- | ------------- |
+| [on-issue-comment.yml](examples/automation/on-issue-comment.yml)       | Trigger via `/prompt2pr` comment on issues              | Issue comment |
+| [dry-run-audit.yml](examples/automation/dry-run-audit.yml)             | Preview changes without creating a PR (`dry_run: true`) | Manual        |
+| [accessibility-audit.yml](examples/automation/accessibility-audit.yml) | Audit frontend files for a11y issues                    | Weekly cron   |
+
+---
+
 ## Provider Setup
 
 Prompt2PR supports four LLM providers. **Providers are interchangeable** — pick
@@ -178,105 +330,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
-
----
-
-## Scheduling
-
-Prompt2PR works with any GitHub Actions trigger. Common patterns:
-
-### Cron Schedule
-
-Run automatically on a recurring schedule:
-
-```yaml
-on:
-  schedule:
-    # Every Monday at 9:00 UTC
-    - cron: '0 9 * * 1'
-```
-
-### Manual Trigger
-
-Run on demand from the Actions tab:
-
-```yaml
-on:
-  workflow_dispatch:
-    inputs:
-      prompt:
-        description: 'What should the AI fix?'
-        required: true
-```
-
-### Both
-
-Combine a schedule with a manual override:
-
-```yaml
-on:
-  schedule:
-    - cron: '0 9 * * 1'
-  workflow_dispatch:
-    inputs:
-      prompt:
-        description: 'Custom prompt (optional)'
-        required: false
-        default: ''
-```
-
----
-
-## Examples
-
-Ready-to-use workflow files organized by use case in the
-[`examples/`](examples/) directory. Copy any file to `.github/workflows/` in
-your repository. See each category's README for detailed descriptions.
-
-> **Providers are interchangeable.** Each example uses a specific provider, but
-> you can swap `provider:` and the corresponding API key to use any supported
-> provider.
-
-### Code Quality
-
-Improve code structure, safety, and standards compliance.
-
-| Workflow                                                                 | Description                                              | Trigger      |
-| ------------------------------------------------------------------------ | -------------------------------------------------------- | ------------ |
-| [enforce-style-guide.yml](examples/code-quality/enforce-style-guide.yml) | Fix naming conventions, add JSDoc, replace magic numbers | Push to main |
-| [add-error-handling.yml](examples/code-quality/add-error-handling.yml)   | Add try/catch blocks and input validation                | Manual       |
-| [deprecation-cleanup.yml](examples/code-quality/deprecation-cleanup.yml) | Replace deprecated APIs with modern alternatives         | Monthly cron |
-| [generate-tests.yml](examples/code-quality/generate-tests.yml)           | Generate unit tests for untested functions               | Weekly cron  |
-
-### Documentation
-
-Keep your docs accurate and up to date.
-
-| Workflow                                                            | Description                                   | Trigger     |
-| ------------------------------------------------------------------- | --------------------------------------------- | ----------- |
-| [sync-readme.yml](examples/documentation/sync-readme.yml)           | Keep README in sync with actual source code   | Weekly cron |
-| [translate-docs.yml](examples/documentation/translate-docs.yml)     | Translate markdown docs into another language | Manual      |
-| [update-copyright.yml](examples/documentation/update-copyright.yml) | Update copyright year across all files        | Yearly cron |
-
-### Maintenance
-
-Handle routine cleanup and housekeeping.
-
-| Workflow                                                        | Description                                 | Trigger     |
-| --------------------------------------------------------------- | ------------------------------------------- | ----------- |
-| [cleanup-todos.yml](examples/maintenance/cleanup-todos.yml)     | Remove resolved TODO/FIXME/HACK comments    | Weekly cron |
-| [improve-logging.yml](examples/maintenance/improve-logging.yml) | Replace console.log with structured logging | Manual      |
-| [fix-dead-links.yml](examples/maintenance/fix-dead-links.yml)   | Find and fix broken links in markdown files | Weekly cron |
-
-### Automation
-
-Event-driven workflows and change previews.
-
-| Workflow                                                               | Description                                             | Trigger       |
-| ---------------------------------------------------------------------- | ------------------------------------------------------- | ------------- |
-| [on-issue-comment.yml](examples/automation/on-issue-comment.yml)       | Trigger via `/prompt2pr` comment on issues              | Issue comment |
-| [dry-run-audit.yml](examples/automation/dry-run-audit.yml)             | Preview changes without creating a PR (`dry_run: true`) | Manual        |
-| [accessibility-audit.yml](examples/automation/accessibility-audit.yml) | Audit frontend files for a11y issues                    | Weekly cron   |
 
 ---
 
