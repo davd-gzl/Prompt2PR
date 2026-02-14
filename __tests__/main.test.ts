@@ -18,6 +18,7 @@ const mockCreateProvider = jest.fn()
 const mockWithRetry = jest.fn()
 const mockParseResponse = jest.fn()
 const mockValidateChanges = jest.fn()
+const mockCountLinesChanged = jest.fn()
 const mockCommitAndPush = jest.fn()
 const mockBuildBranchName = jest.fn()
 const mockCreatePullRequest = jest.fn()
@@ -42,7 +43,8 @@ jest.unstable_mockModule('../src/response-parser.js', () => ({
   parseResponse: mockParseResponse
 }))
 jest.unstable_mockModule('../src/guardrails.js', () => ({
-  validateChanges: mockValidateChanges
+  validateChanges: mockValidateChanges,
+  countLinesChanged: mockCountLinesChanged
 }))
 jest.unstable_mockModule('../src/git-manager.js', () => ({
   commitAndPush: mockCommitAndPush,
@@ -95,6 +97,7 @@ function mockHappyPath(): void {
     { path: 'src/main.ts', content: 'updated', action: 'modify' }
   ])
   mockBuildBranchName.mockReturnValue('prompt2pr/test-123')
+  mockCountLinesChanged.mockReturnValue(1)
   mockCommitAndPush.mockResolvedValue(undefined)
   mockCreatePullRequest.mockResolvedValue({
     url: 'https://github.com/owner/repo/pull/42',

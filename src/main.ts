@@ -3,7 +3,7 @@ import * as core from '@actions/core'
 import { validateConfig } from './config.js'
 import { scanFiles } from './file-scanner.js'
 import { commitAndPush, buildBranchName } from './git-manager.js'
-import { validateChanges } from './guardrails.js'
+import { validateChanges, countLinesChanged } from './guardrails.js'
 import { createLogger } from './logger.js'
 import { createPullRequest } from './pr-creator.js'
 import { buildPrompt } from './prompt-assembler.js'
@@ -16,23 +16,6 @@ import { withRetry } from './retry.js'
 // ---------------------------------------------------------------------------
 
 const log = createLogger('main')
-
-/**
- * Count total lines changed across all file changes.
- */
-function countLinesChanged(
-  changes: { content: string; action: string }[]
-): number {
-  let total = 0
-  for (const change of changes) {
-    if (change.action === 'delete') {
-      total += 1
-    } else {
-      total += change.content.split('\n').length
-    }
-  }
-  return total
-}
 
 // ---------------------------------------------------------------------------
 // Main exported function

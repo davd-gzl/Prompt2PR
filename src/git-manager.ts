@@ -95,7 +95,16 @@ export async function applyChanges(
   workDir: string
 ): Promise<void> {
   for (const change of changes) {
-    const absPath = path.join(workDir, change.path)
+    const absPath = path.resolve(workDir, change.path)
+
+    // Defense-in-depth: ensure resolved path stays within the working directory
+    const resolvedWorkDir = path.resolve(workDir)
+    const relativePath = path.relative(resolvedWorkDir, absPath)
+    if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
+      throw new GitError(
+        `Path traversal detected: '${change.path}' resolves outside the working directory`
+      )
+    }
 
     if (change.action === 'delete') {
       log.info(`Deleting file: ${change.path}`)
