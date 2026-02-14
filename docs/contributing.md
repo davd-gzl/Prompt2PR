@@ -51,7 +51,7 @@ npm run all
 
 ## Project Structure
 
-```
+```text
 Prompt2PR/
 ├── src/                    # TypeScript source code
 │   ├── index.ts            # Entry point

@@ -4,13 +4,22 @@
 MD004:
   style: dash
 
-# Disable line length for tables
+# Relax line-length: ignore tables, code blocks, headings, and long links
 MD013:
   tables: false
+  code_blocks: false
+  headings: false
 
-# Ordered list item prefix
+# Allow duplicate headings under different parents (e.g. ### Setup per provider)
+MD024:
+  siblings_only: true
+
+# Allow Jekyll front matter title + body H1
+MD025: false
+
+# Ordered list item prefix — allow 1/2/3 style
 MD029:
-  style: one
+  style: ordered
 
 # Spaces after list markers
 MD030:

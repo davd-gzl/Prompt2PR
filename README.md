@@ -4,8 +4,8 @@
 [![Coverage](./badges/coverage.svg)](./badges/coverage.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-> A GitHub Action that turns prompts into Pull Requests using LLMs.
-> Point it at files, describe what to fix, and get an automated PR.
+> A GitHub Action that turns prompts into Pull Requests using LLMs. Point it at
+> files, describe what to fix, and get an automated PR.
 
 ---
 
@@ -48,7 +48,7 @@ jobs:
 
 4. **Trigger the workflow** from the _Actions_ tab → _Prompt2PR_ → _Run
    workflow_, enter your prompt, and watch the PR appear. You can also automate
-   it with a [cron schedule](#scheduling).
+   it with a [cron schedule](#scheduling-triggers).
 
 ---
 
@@ -143,7 +143,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: davd-gzl/Prompt2PR@v1
         with:
-          prompt: 'Review recent changes for bugs, dead imports, and code smells. Fix any issues.'
+          prompt:
+            'Review recent changes for bugs, dead imports, and code smells. Fix
+            any issues.'
           provider: mistral
           paths: 'src/**'
         env:

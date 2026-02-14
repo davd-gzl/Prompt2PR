@@ -165,7 +165,7 @@ and set the action as failed via `@actions/core.setFailed()`.
 
 ## Project Structure
 
-```
+```text
 src/
 ├── index.ts                 # Entry point
 ├── main.ts                  # Pipeline orchestrator

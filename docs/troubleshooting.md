@@ -18,7 +18,7 @@ Check the workflow run logs in the **Actions** tab. Common causes:
 
 The LLM analyzed your files and found nothing to change. The log will show:
 
-```
+```text
 Found 0 issues. No PR created.
 ```
 
