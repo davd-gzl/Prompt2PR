@@ -26,8 +26,8 @@ Workflows that keep your docs accurate and up to date.
 
 | Workflow                                                   | Description                                   |
 | ---------------------------------------------------------- | --------------------------------------------- |
-| [sync-readme.yml](documentation/sync-readme.yml)           | Keep README in sync with actual source code   |
-| [translate-docs.yml](documentation/translate-docs.yml)     | Translate markdown docs into another language |
+| [sync-readme.yml](documentation/sync-readme.yml)           | Keep readme in sync with actual source code   |
+| [translate-docs.yml](documentation/translate-docs.yml)     | Translate Markdown docs into another language |
 | [update-copyright.yml](documentation/update-copyright.yml) | Update copyright year across all files        |
 
 ### [Maintenance](maintenance/)
@@ -38,7 +38,7 @@ Workflows that handle routine cleanup and housekeeping tasks.
 | ------------------------------------------------------ | ------------------------------------------- |
 | [cleanup-todos.yml](maintenance/cleanup-todos.yml)     | Remove resolved TODO/FIXME/HACK comments    |
 | [improve-logging.yml](maintenance/improve-logging.yml) | Replace console.log with structured logging |
-| [fix-dead-links.yml](maintenance/fix-dead-links.yml)   | Find and fix broken links in markdown files |
+| [fix-dead-links.yml](maintenance/fix-dead-links.yml)   | Find and fix broken links in Markdown files |
 
 ### [Automation](automation/)
 

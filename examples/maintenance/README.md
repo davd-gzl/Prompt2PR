@@ -7,7 +7,7 @@ schedule to keep your codebase tidy without manual intervention.
 
 ### cleanup-todos.yml
 
-Finds TODO, FIXME, HACK, and XXX comments in source code. Determines whether
+Finds todo, FIXME, HACK, and XXX comments in source code. Determines whether
 each one has been resolved by the surrounding code. Removes resolved comments
 and leaves unresolved ones in place.
 
@@ -23,7 +23,7 @@ traces on errors. Does not change application logic.
 
 ### fix-dead-links.yml
 
-Scans markdown files for broken or dead links (404, 410, unreachable). Updates
+Scans Markdown files for broken or dead links (404, 410, unreachable). Updates
 broken links to the correct URL or removes them with a note.
 
 **Trigger:** Weekly cron (Monday) + manual dispatch

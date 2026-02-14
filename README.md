@@ -19,32 +19,32 @@ Get a working Prompt2PR workflow in under 5 minutes:
    Secrets and variables → Actions_ (e.g., `MISTRAL_API_KEY`).
 3. **Create a workflow file** at `.github/workflows/prompt2pr.yml`:
 
-```yaml
-name: Prompt2PR
-on:
-  workflow_dispatch:
-    inputs:
-      prompt:
-        description: 'What should the AI fix?'
-        required: true
+   ```yaml
+   name: Prompt2PR
+   on:
+     workflow_dispatch:
+       inputs:
+         prompt:
+           description: 'What should the AI fix?'
+           required: true
 
-permissions:
-  contents: write
-  pull-requests: write
+   permissions:
+     contents: write
+     pull-requests: write
 
-jobs:
-  prompt2pr:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: davd-gzl/Prompt2PR@v1
-        with:
-          prompt: ${{ github.event.inputs.prompt }}
-          provider: mistral
-        env:
-          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-```
+   jobs:
+     prompt2pr:
+       runs-on: ubuntu-latest
+       steps:
+         - uses: actions/checkout@v4
+         - uses: davd-gzl/Prompt2PR@v1
+           with:
+             prompt: ${{ github.event.inputs.prompt }}
+             provider: mistral
+           env:
+             MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+   ```
 
 4. **Trigger the workflow** from the _Actions_ tab → _Prompt2PR_ → _Run
    workflow_, enter your prompt, and watch the PR appear. You can also run it
@@ -223,7 +223,7 @@ jobs:
 
 Ready-to-use workflow files organized by use case in the
 [`examples/`](examples/) directory. Copy any file to `.github/workflows/` in
-your repository. See each category's README for detailed descriptions.
+your repository. See each category's readme for detailed descriptions.
 
 > **Providers are interchangeable.** Each example uses a specific provider, but
 > you can swap `provider:` and the corresponding API key to use any supported
@@ -246,8 +246,8 @@ Keep your docs accurate and up to date.
 
 | Workflow                                                            | Description                                   | Trigger     |
 | ------------------------------------------------------------------- | --------------------------------------------- | ----------- |
-| [sync-readme.yml](examples/documentation/sync-readme.yml)           | Keep README in sync with actual source code   | Weekly cron |
-| [translate-docs.yml](examples/documentation/translate-docs.yml)     | Translate markdown docs into another language | Manual      |
+| [sync-readme.yml](examples/documentation/sync-readme.yml)           | Keep readme in sync with actual source code   | Weekly cron |
+| [translate-docs.yml](examples/documentation/translate-docs.yml)     | Translate Markdown docs into another language | Manual      |
 | [update-copyright.yml](examples/documentation/update-copyright.yml) | Update copyright year across all files        | Yearly cron |
 
 ### Maintenance
@@ -258,7 +258,7 @@ Handle routine cleanup and housekeeping.
 | --------------------------------------------------------------- | ------------------------------------------- | ----------- |
 | [cleanup-todos.yml](examples/maintenance/cleanup-todos.yml)     | Remove resolved TODO/FIXME/HACK comments    | Weekly cron |
 | [improve-logging.yml](examples/maintenance/improve-logging.yml) | Replace console.log with structured logging | Manual      |
-| [fix-dead-links.yml](examples/maintenance/fix-dead-links.yml)   | Find and fix broken links in markdown files | Weekly cron |
+| [fix-dead-links.yml](examples/maintenance/fix-dead-links.yml)   | Find and fix broken links in Markdown files | Weekly cron |
 
 ### Automation
 
@@ -280,24 +280,24 @@ whichever you prefer and swap the `provider:` input and API key.
 ### Mistral
 
 1. Sign up at [console.mistral.ai](https://console.mistral.ai/).
-1. Navigate to **API Keys** and create a new key.
-1. In your GitHub repository, go to _Settings → Secrets and variables → Actions_
-   and add `MISTRAL_API_KEY` with your key value.
-1. Set `provider: mistral` in your workflow.
+2. Navigate to **API Keys** and create a new key.
+3. In your GitHub repository, go to _Settings → Secrets and variables → Actions_
+   and add `MISTRAL_API_KEY` with your key-value.
+4. Set `provider: mistral` in your workflow.
 
 ### OpenAI
 
 1. Sign up at [platform.openai.com](https://platform.openai.com/).
-1. Navigate to **API Keys** and create a new secret key.
-1. In your GitHub repository, add `OPENAI_API_KEY` as a GitHub Secret.
-1. Set `provider: openai` in your workflow.
+2. Navigate to **API Keys** and create a new secret key.
+3. In your GitHub repository, add `OPENAI_API_KEY` as a GitHub Secret.
+4. Set `provider: openai` in your workflow.
 
 ### Anthropic
 
 1. Sign up at [console.anthropic.com](https://console.anthropic.com/).
-1. Navigate to **API Keys** and create a new key.
-1. In your GitHub repository, add `ANTHROPIC_API_KEY` as a GitHub Secret.
-1. Set `provider: anthropic` in your workflow.
+2. Navigate to **API Keys** and create a new key.
+3. In your GitHub repository, add `ANTHROPIC_API_KEY` as a GitHub Secret.
+4. Set `provider: anthropic` in your workflow.
 
 ### GitHub Models
 
@@ -306,10 +306,10 @@ needed. This works with any GitHub Copilot subscription.
 
 1. Ensure your GitHub account has access to
    [GitHub Models](https://github.com/marketplace/models).
-1. No additional secrets required — the built-in `GITHUB_TOKEN` is used for
+2. No additional secrets required — the built-in `GITHUB_TOKEN` is used for
    authentication.
-1. Add `models: read` to your workflow permissions.
-1. Set `provider: github` and use models in `publisher/model-name` format (e.g.,
+3. Add `models: read` to your workflow permissions.
+4. Set `provider: github` and use models in `publisher/model-name` format (e.g.,
    `openai/gpt-4o`, `anthropic/claude-sonnet-4.5`).
 
 ```yaml
@@ -463,7 +463,7 @@ npm run all
 ### Local Testing
 
 1. Copy `.env.example` to `.env` and fill in your API keys.
-1. Run `npm run local-action` to simulate a GitHub Actions run locally.
+2. Run `npm run local-action` to simulate a GitHub Actions run locally.
 
 ### Release Process
 

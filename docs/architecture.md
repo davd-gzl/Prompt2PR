@@ -120,7 +120,7 @@ PR.
 
 ### 10. Git Operations
 
-Using `@actions/exec` to run git commands:
+Using `@actions/exec` to run Git commands:
 
 1. Creates a new branch: `{branch_prefix}{timestamp}`
 2. Applies file changes (create, modify, or delete)

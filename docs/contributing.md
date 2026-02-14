@@ -42,7 +42,7 @@ npm run all
 | `npm run lint`         | Run ESLint                                              |
 | `npm run bundle`       | Format + Rollup bundle to `dist/index.js`               |
 | `npm run local-action` | Test locally with `@github/local-action`                |
-| `npm run format:write` | Auto-format with Prettier                               |
+| `npm run format:write` | Autoformat with Prettier                                |
 | `npm run format:check` | Check formatting without modifying files                |
 | `npm run package`      | Clean dist/ and run Rollup bundler                      |
 | `npm run coverage`     | Generate coverage badge SVG                             |

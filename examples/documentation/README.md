@@ -8,15 +8,15 @@ becomes a problem.
 
 ### sync-readme.yml
 
-Compares the README with actual source code to find outdated code examples, API
-references, or configuration options. Updates the README to match the current
+Compares the readme with actual source code to find outdated code examples, API
+references, or configuration options. Updates the readme to match the current
 implementation without touching source files.
 
 **Trigger:** Weekly cron + manual dispatch
 
 ### translate-docs.yml
 
-Translates markdown documentation into another language while preserving
+Translates Markdown documentation into another language while preserving
 formatting, code blocks, links, and front matter. Creates translated files with
 a language suffix (e.g., `README.fr.md`).
 

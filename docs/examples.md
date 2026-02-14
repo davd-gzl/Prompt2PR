@@ -74,13 +74,13 @@ creates tests — does not modify source files.
 
 Workflows that keep your docs accurate and up to date.
 
-### Sync README
+### Sync readme
 
 **File:**
 [`examples/documentation/sync-readme.yml`](https://github.com/davd-gzl/Prompt2PR/blob/main/examples/documentation/sync-readme.yml)
 
-Compares the README with actual source code to find outdated code examples, API
-references, or configuration options. Updates the README to match the current
+Compares the readme with actual source code to find outdated code examples, API
+references, or configuration options. Updates the readme to match the current
 implementation without touching source files.
 
 **Trigger:** Weekly cron + manual dispatch
@@ -90,7 +90,7 @@ implementation without touching source files.
 **File:**
 [`examples/documentation/translate-docs.yml`](https://github.com/davd-gzl/Prompt2PR/blob/main/examples/documentation/translate-docs.yml)
 
-Translates markdown documentation into another language while preserving
+Translates Markdown documentation into another language while preserving
 formatting, code blocks, links, and front matter. Creates translated files with
 a language suffix (e.g., `README.fr.md`).
 
@@ -117,7 +117,7 @@ Workflows that handle routine cleanup and housekeeping.
 **File:**
 [`examples/maintenance/cleanup-todos.yml`](https://github.com/davd-gzl/Prompt2PR/blob/main/examples/maintenance/cleanup-todos.yml)
 
-Finds TODO, FIXME, HACK, and XXX comments in source code. Determines whether
+Finds todo, FIXME, HACK, and XXX comments in source code. Determines whether
 each one has been resolved by the surrounding code. Removes resolved comments
 and leaves unresolved ones in place.
 
@@ -138,7 +138,7 @@ information, and stack traces on errors. Does not change application logic.
 **File:**
 [`examples/maintenance/fix-dead-links.yml`](https://github.com/davd-gzl/Prompt2PR/blob/main/examples/maintenance/fix-dead-links.yml)
 
-Scans markdown files for broken or dead links and fixes or removes them.
+Scans Markdown files for broken or dead links and fixes or removes them.
 
 **Trigger:** Weekly cron (Monday) + manual dispatch
 
