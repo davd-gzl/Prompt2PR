@@ -68,11 +68,11 @@ development_status:
   epic-6: backlog
   6-1-openai-provider-implementation: backlog
   epic-6-retrospective: optional
-  epic-7: in-progress
+  epic-7: done
   7-1-scheduling-trigger-configuration: done
   7-2-structured-logging-observability: done
   epic-7-retrospective: optional
-  epic-8: backlog
+  epic-8: in-progress
   8-1-readme-quick-start-config-reference-provider-setup: backlog
   8-2-example-workflows: backlog
   8-3-test-coverage-gate-release: done
