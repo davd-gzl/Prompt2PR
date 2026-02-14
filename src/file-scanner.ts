@@ -139,10 +139,16 @@ export async function scanFiles(
   let excludedGitHub = 0
 
   for (const absPath of matchedPaths) {
-    // Stat the file — skip directories
-    const stat = await fs.stat(absPath)
+    // Use lstat to avoid following symlinks (TOCTOU prevention)
+    const stat = await fs.lstat(absPath)
     if (stat.isDirectory()) {
       excludedDirectory++
+      continue
+    }
+
+    // Skip symbolic links — they could point outside the repository
+    if (stat.isSymbolicLink()) {
+      log.warn(`Skipping symbolic link: ${toRelativePosix(absPath, workDir)}`)
       continue
     }
 

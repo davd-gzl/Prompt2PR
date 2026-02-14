@@ -23,6 +23,7 @@ const DEFAULT_MODEL = 'claude-sonnet-4-20250514'
 const ANTHROPIC_VERSION = '2023-06-01'
 const TIMEOUT_MS = 120_000 // 120 seconds (NFR2)
 const MAX_TOKENS = 4096
+const MAX_RESPONSE_BYTES = 10 * 1024 * 1024 // 10 MB — reject oversized responses
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -159,10 +160,45 @@ export class AnthropicProvider implements LLMProvider {
       throw new ProviderError(message, this.name, response.status)
     }
 
-    // Parse the successful response
-    const responseBody: unknown = await response.json()
+    // Parse the successful response — read as text first for safety checks
+    const contentType = response.headers.get('content-type') ?? ''
+    if (!contentType.includes('application/json')) {
+      throw new ProviderError(
+        `Anthropic API returned unexpected Content-Type: '${contentType.slice(0, 100)}' (expected application/json)`,
+        this.name
+      )
+    }
 
-    log.debug(`Raw response: ${JSON.stringify(responseBody).slice(0, 500)}`)
+    const responseText = await response.text()
+
+    if (responseText.length > MAX_RESPONSE_BYTES) {
+      throw new ProviderError(
+        `Anthropic API response too large: ${responseText.length} bytes exceeds ${MAX_RESPONSE_BYTES} byte limit`,
+        this.name
+      )
+    }
+
+    let responseBody: unknown
+    try {
+      responseBody = JSON.parse(responseText)
+    } catch {
+      throw new ProviderError(
+        `Anthropic API returned invalid JSON in response body`,
+        this.name
+      )
+    }
+
+    // Log only structural metadata — never log raw response content,
+    // which may contain secrets echoed back from scanned files.
+    const contentCount = Array.isArray(
+      (responseBody as Record<string, unknown>)?.content
+    )
+      ? ((responseBody as Record<string, unknown>).content as unknown[]).length
+      : 0
+    log.debug(
+      `Response received: ${contentCount} content block(s), ` +
+        `payload size ${JSON.stringify(responseBody).length} bytes`
+    )
 
     return this.parseResponse(responseBody)
   }

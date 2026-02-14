@@ -15,15 +15,18 @@ import * as core from '../__fixtures__/core.js'
 jest.unstable_mockModule('@actions/core', () => core)
 
 // Mock node:fs/promises
-const mockStat =
-  jest.fn<
-    (p: string) => Promise<{ isDirectory: () => boolean; size: number }>
-  >()
+const mockStat = jest.fn<
+  (p: string) => Promise<{
+    isDirectory: () => boolean
+    isSymbolicLink: () => boolean
+    size: number
+  }>
+>()
 const mockReadFile =
   jest.fn<(p: string, enc: BufferEncoding) => Promise<string>>()
 
 jest.unstable_mockModule('node:fs/promises', () => ({
-  stat: mockStat,
+  lstat: mockStat,
   readFile: mockReadFile
 }))
 
@@ -56,14 +59,18 @@ function setupGlob(matchedFiles: string[]): void {
 }
 
 function setupStat(
-  statMap: Record<string, { isDir: boolean; size: number }>
+  statMap: Record<string, { isDir: boolean; isSymlink?: boolean; size: number }>
 ): void {
   mockStat.mockImplementation(async (p: string) => {
     const entry = statMap[p]
     if (!entry) {
       throw new Error(`ENOENT: no such file: ${p}`)
     }
-    return { isDirectory: () => entry.isDir, size: entry.size }
+    return {
+      isDirectory: () => entry.isDir,
+      isSymbolicLink: () => entry.isSymlink ?? false,
+      size: entry.size
+    }
   })
 }
 
@@ -322,6 +329,29 @@ describe('file-scanner.ts — scanFiles()', () => {
 
     expect(result).toHaveLength(1)
     expect(result[0].path).toBe('package.json')
+  })
+
+  // -- Symbolic links are skipped (TOCTOU prevention) ---------------------
+
+  it('skips symbolic links to prevent symlink-following attacks', async () => {
+    const files = [
+      path.join(WORK_DIR, 'symlink.ts'),
+      path.join(WORK_DIR, 'regular.ts')
+    ]
+    setupGlob(files)
+    setupStat({
+      [files[0]]: { isDir: false, isSymlink: true, size: 100 },
+      [files[1]]: { isDir: false, size: 200 }
+    })
+    setupReadFile({
+      [files[1]]: 'export const regular = true'
+    })
+
+    const result = await scanFiles(['**'], WORK_DIR)
+
+    expect(result).toHaveLength(1)
+    expect(result[0].path).toBe('regular.ts')
+    expect(core.warning).toHaveBeenCalled()
   })
 
   // -- Default workDir parameter ------------------------------------------

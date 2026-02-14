@@ -200,7 +200,7 @@ describe('git-manager.ts — commitAndPush()', () => {
       'prompt2pr[bot]@users.noreply.github.com'
     ])
     expect(calls[2][1]).toEqual(['checkout', '-b', 'prompt2pr/test-123'])
-    expect(calls[3][1]).toEqual(['add', 'src/main.ts'])
+    expect(calls[3][1]).toEqual(['add', '--', 'src/main.ts'])
     expect(calls[4][1]).toEqual(['commit', '-m', '[Prompt2PR] test'])
     expect(calls[5][1]).toEqual(['push', 'origin', 'prompt2pr/test-123'])
   })
@@ -238,5 +238,37 @@ describe('git-manager.ts — commitAndPush()', () => {
         '/repo'
       )
     ).rejects.toThrow(GitError)
+  })
+
+  it('throws GitError for file paths starting with "-" (git flag injection prevention)', async () => {
+    mockGitSuccess() // git config user.name
+    mockGitSuccess() // git config user.email
+    mockGitSuccess() // checkout -b
+    mockMkdir.mockResolvedValue(undefined)
+    mockWriteFile.mockResolvedValue(undefined)
+
+    await expect(
+      commitAndPush(
+        [{ path: '-malicious', content: 'x', action: 'create' }],
+        'branch',
+        'msg',
+        '/repo'
+      )
+    ).rejects.toThrow(GitError)
+
+    mockGitSuccess() // git config user.name
+    mockGitSuccess() // git config user.email
+    mockGitSuccess() // checkout -b
+    mockMkdir.mockResolvedValue(undefined)
+    mockWriteFile.mockResolvedValue(undefined)
+
+    await expect(
+      commitAndPush(
+        [{ path: '-malicious', content: 'x', action: 'create' }],
+        'branch',
+        'msg',
+        '/repo'
+      )
+    ).rejects.toThrow(/paths starting with '-'/)
   })
 })

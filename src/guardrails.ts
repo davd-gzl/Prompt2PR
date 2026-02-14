@@ -110,6 +110,14 @@ export function validateChanges(
       )
     }
 
+    // Reject paths starting with '-' (could be interpreted as git flags)
+    if (change.path.startsWith('-')) {
+      throw new GuardrailError(
+        `File '${change.path}' starts with '-', which could be interpreted as a command-line flag. ` +
+          `All file paths must not begin with a hyphen.`
+      )
+    }
+
     // Reject paths containing '..' segments (directory traversal)
     const normalized = path.normalize(change.path)
     const segments = normalized.split(/[/\\]/)

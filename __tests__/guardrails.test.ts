@@ -110,6 +110,14 @@ describe('guardrails.ts — validateChanges()', () => {
     expect(validateChanges(changes, config)).toHaveLength(1)
   })
 
+  it('throws GuardrailError for paths starting with "-" (flag injection prevention)', () => {
+    const changes = [makeChange({ path: '-malicious' })]
+    const config = makeConfig()
+
+    expect(() => validateChanges(changes, config)).toThrow(GuardrailError)
+    expect(() => validateChanges(changes, config)).toThrow(/starts with '-'/)
+  })
+
   // -- .github/ exclusion (FR31) -------------------------------------------
 
   it('throws GuardrailError for files in .github/ directory', () => {

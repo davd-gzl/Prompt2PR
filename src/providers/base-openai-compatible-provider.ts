@@ -25,6 +25,8 @@ import type { LLMProvider } from './types.js'
 // ---------------------------------------------------------------------------
 
 const TIMEOUT_MS = 120_000 // 120 seconds (NFR2)
+const MAX_RESPONSE_BYTES = 10 * 1024 * 1024 // 10 MB — reject oversized responses
+const DEFAULT_MAX_TOKENS = 16_384 // Bound response size and cost
 
 // ---------------------------------------------------------------------------
 // Base class
@@ -106,7 +108,8 @@ export abstract class BaseOpenAICompatibleProvider implements LLMProvider {
     const body = JSON.stringify({
       model,
       messages: request.messages,
-      response_format: { type: 'json_object' }
+      response_format: { type: 'json_object' },
+      max_tokens: DEFAULT_MAX_TOKENS
     })
 
     let response: Response
@@ -157,11 +160,44 @@ export abstract class BaseOpenAICompatibleProvider implements LLMProvider {
       throw new ProviderError(message, this.name, response.status)
     }
 
-    // Parse the successful response
-    const responseBody: unknown = await response.json()
+    // Parse the successful response — read as text first for safety checks
+    const contentType = response.headers.get('content-type') ?? ''
+    if (!contentType.includes('application/json')) {
+      throw new ProviderError(
+        `${this.displayName} API returned unexpected Content-Type: '${contentType.slice(0, 100)}' (expected application/json)`,
+        this.name
+      )
+    }
 
+    const responseText = await response.text()
+
+    if (responseText.length > MAX_RESPONSE_BYTES) {
+      throw new ProviderError(
+        `${this.displayName} API response too large: ${responseText.length} bytes exceeds ${MAX_RESPONSE_BYTES} byte limit`,
+        this.name
+      )
+    }
+
+    let responseBody: unknown
+    try {
+      responseBody = JSON.parse(responseText)
+    } catch {
+      throw new ProviderError(
+        `${this.displayName} API returned invalid JSON in response body`,
+        this.name
+      )
+    }
+
+    // Log only structural metadata — never log raw response content,
+    // which may contain secrets echoed back from scanned files.
+    const choicesCount = Array.isArray(
+      (responseBody as Record<string, unknown>)?.choices
+    )
+      ? ((responseBody as Record<string, unknown>).choices as unknown[]).length
+      : 0
     this.log.debug(
-      `Raw response: ${JSON.stringify(responseBody).slice(0, 500)}`
+      `Response received: ${choicesCount} choice(s), ` +
+        `payload size ${JSON.stringify(responseBody).length} bytes`
     )
 
     return this.parseResponse(responseBody)

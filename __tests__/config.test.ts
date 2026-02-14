@@ -35,6 +35,7 @@ function mockValidInputs(overrides: Record<string, string> = {}): void {
     provider: 'mistral',
     model: '',
     base_url: '',
+    allowed_hosts: '',
     branch_prefix: 'prompt2pr/',
     max_files: '10',
     max_changes: '200',
@@ -181,6 +182,27 @@ describe('config.ts — validateConfig()', () => {
 
   it("throws ConfigError when 'max_files' is negative", () => {
     mockValidInputs({ max_files: '-5' })
+
+    expect(() => validateConfig()).toThrow(ConfigError)
+    expect(() => validateConfig()).toThrow(/max_files/)
+  })
+
+  it("throws ConfigError when 'max_files' exceeds upper bound (1000)", () => {
+    mockValidInputs({ max_files: '1001' })
+
+    expect(() => validateConfig()).toThrow(ConfigError)
+    expect(() => validateConfig()).toThrow(/exceeds the maximum/)
+  })
+
+  it("throws ConfigError when 'max_changes' exceeds upper bound (100000)", () => {
+    mockValidInputs({ max_changes: '100001' })
+
+    expect(() => validateConfig()).toThrow(ConfigError)
+    expect(() => validateConfig()).toThrow(/exceeds the maximum/)
+  })
+
+  it("throws ConfigError when 'max_files' uses scientific notation", () => {
+    mockValidInputs({ max_files: '1e3' })
 
     expect(() => validateConfig()).toThrow(ConfigError)
     expect(() => validateConfig()).toThrow(/max_files/)
@@ -366,14 +388,15 @@ describe('config.ts — validateConfig()', () => {
     expect(() => validateConfig()).toThrow(/not a recognised LLM provider/)
   })
 
-  it('allows custom host via PROMPT2PR_ALLOWED_HOSTS env var', () => {
-    mockValidInputs({ base_url: 'https://my-proxy.internal.corp' })
-    process.env.PROMPT2PR_ALLOWED_HOSTS = 'my-proxy.internal.corp'
+  it('allows custom host via allowed_hosts action input', () => {
+    mockValidInputs({
+      base_url: 'https://my-proxy.internal.corp',
+      allowed_hosts: 'my-proxy.internal.corp'
+    })
 
     const config = validateConfig()
 
     expect(config.baseUrl).toBe('https://my-proxy.internal.corp')
-    delete process.env.PROMPT2PR_ALLOWED_HOSTS
   })
 
   it('throws ConfigError for file:// scheme base_url', () => {

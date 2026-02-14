@@ -5,4 +5,8 @@
 import { run } from './main.js'
 
 /* istanbul ignore next */
-run()
+run().catch((error: unknown) => {
+  // eslint-disable-next-line no-console
+  console.error('Unhandled error in action entrypoint:', error)
+  process.exitCode = 1
+})

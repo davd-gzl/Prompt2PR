@@ -42,11 +42,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Extract prompt from comment
+        id: extract
+        run: |
+          # Strip the /prompt2pr prefix and leading whitespace from the comment
+          COMMENT_BODY="${{ github.event.comment.body }}"
+          PROMPT="${COMMENT_BODY#/prompt2pr }"
+          # Write to GITHUB_OUTPUT using a heredoc delimiter to handle
+          # multi-line prompts safely
+          {
+            echo 'prompt<<PROMPT2PR_EOF'
+            echo "$PROMPT"
+            echo 'PROMPT2PR_EOF'
+          } >> "$GITHUB_OUTPUT"
+
       - uses: davd-gzl/Prompt2PR@v1
         id: prompt2pr
         with:
-          prompt: >-
-            ${{ github.event.comment.body }}
+          prompt: ${{ steps.extract.outputs.prompt }}
           provider: 'github'
           model: 'openai/gpt-4o'
           paths: 'src/**'

@@ -65,6 +65,8 @@ export interface ActionConfig {
 
 export const DEFAULT_MAX_FILES = 10
 export const DEFAULT_MAX_CHANGES = 200
+const MAX_FILES_UPPER_BOUND = 1000
+const MAX_CHANGES_UPPER_BOUND = 100_000
 const DEFAULT_BRANCH_PREFIX = 'prompt2pr/'
 const DEFAULT_LABEL = 'prompt2pr'
 
@@ -96,7 +98,8 @@ function isValidProvider(value: string): value is ProviderName {
 function parsePositiveInt(
   value: string,
   name: string,
-  defaultValue: number
+  defaultValue: number,
+  upperBound?: number
 ): number {
   const trimmed = value.trim()
 
@@ -104,11 +107,24 @@ function parsePositiveInt(
     return defaultValue
   }
 
+  // Strict integer format: reject scientific notation, floats, etc.
+  if (!/^\d+$/.test(trimmed)) {
+    throw new ConfigError(
+      `Invalid value for '${name}': '${value}'. Must be a positive integer (digits only).`
+    )
+  }
+
   const parsed = Number(trimmed)
 
   if (!Number.isInteger(parsed) || parsed <= 0) {
     throw new ConfigError(
       `Invalid value for '${name}': '${value}'. Must be a positive integer.`
+    )
+  }
+
+  if (upperBound !== undefined && parsed > upperBound) {
+    throw new ConfigError(
+      `Invalid value for '${name}': ${parsed} exceeds the maximum allowed value of ${upperBound}.`
     )
   }
 
@@ -134,12 +150,12 @@ const ALLOWED_BASE_URL_HOSTS = new Set([
  * arbitrary endpoints, and plaintext-over-HTTP transmission.
  *
  * Self-hosted / proxy URLs can be allowed by adding the hostname to
- * the `PROMPT2PR_ALLOWED_HOSTS` environment variable (comma-separated).
+ * the `allowed_hosts` action input (comma-separated).
  *
  * @throws {ConfigError} If the URL is malformed, not HTTPS, or targets
  *   an untrusted host.
  */
-function validateBaseUrl(baseUrl: string): void {
+function validateBaseUrl(baseUrl: string, allowedHostsInput: string): void {
   let parsed: URL
   try {
     parsed = new URL(baseUrl)
@@ -159,7 +175,7 @@ function validateBaseUrl(baseUrl: string): void {
 
   // Build the full allowlist: built-in providers + user-defined hosts
   const allowedHosts = new Set(ALLOWED_BASE_URL_HOSTS)
-  const extraHosts = (process.env.PROMPT2PR_ALLOWED_HOSTS ?? '')
+  const extraHosts = allowedHostsInput
     .split(',')
     .map((h) => h.trim().toLowerCase())
     .filter((h) => h.length > 0)
@@ -173,7 +189,7 @@ function validateBaseUrl(baseUrl: string): void {
     throw new ConfigError(
       `Invalid 'base_url': host '${hostname}' is not a recognised LLM provider. ` +
         `Allowed hosts: ${[...allowedHosts].join(', ')}. ` +
-        `For self-hosted endpoints, add the hostname to the PROMPT2PR_ALLOWED_HOSTS env var.`
+        `For self-hosted endpoints, add the hostname to the 'allowed_hosts' action input.`
     )
   }
 }
@@ -239,10 +255,11 @@ export function validateConfig(): ActionConfig {
   }
 
   const baseUrl = core.getInput('base_url')
+  const allowedHosts = core.getInput('allowed_hosts')
 
   // Validate base_url if provided (SSRF + credential-exfiltration prevention)
   if (baseUrl) {
-    validateBaseUrl(baseUrl)
+    validateBaseUrl(baseUrl, allowedHosts)
   }
 
   const branchPrefix = core.getInput('branch_prefix') || DEFAULT_BRANCH_PREFIX
@@ -258,13 +275,15 @@ export function validateConfig(): ActionConfig {
   const maxFiles = parsePositiveInt(
     core.getInput('max_files'),
     'max_files',
-    DEFAULT_MAX_FILES
+    DEFAULT_MAX_FILES,
+    MAX_FILES_UPPER_BOUND
   )
 
   const maxChanges = parsePositiveInt(
     core.getInput('max_changes'),
     'max_changes',
-    DEFAULT_MAX_CHANGES
+    DEFAULT_MAX_CHANGES,
+    MAX_CHANGES_UPPER_BOUND
   )
 
   // --- Paths ---

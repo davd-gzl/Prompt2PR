@@ -128,6 +128,12 @@ export async function run(): Promise<void> {
 
     // Step 11: Create Pull Request (FR19-FR22)
     const token = process.env.GITHUB_TOKEN ?? ''
+    if (!token) {
+      throw new ConfigError(
+        'Missing GITHUB_TOKEN: the environment variable is required for PR creation. ' +
+          "Pass it via the 'env' block in your workflow YAML."
+      )
+    }
     const metadata = {
       timestamp: new Date().toISOString(),
       model: resolvedModel,

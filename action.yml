@@ -77,6 +77,15 @@ inputs:
     required: false
     default: ''
 
+  allowed_hosts:
+    description: >-
+      Comma-separated list of additional hostnames allowed for base_url
+      validation. Use this for self-hosted or proxied LLM endpoints. Each
+      hostname is added to the built-in allowlist (api.mistral.ai,
+      api.openai.com, api.anthropic.com, models.github.ai, etc.).
+    required: false
+    default: ''
+
 outputs:
   pr_url:
     description: The URL of the created Pull Request. Empty if skipped.

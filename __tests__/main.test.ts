@@ -346,4 +346,21 @@ describe('main.ts — run()', () => {
     expect(core.setFailed).toHaveBeenCalledWith('string error')
     expect(core.setOutput).toHaveBeenCalledWith('skipped', 'false')
   })
+
+  it('fails with ConfigError when GITHUB_TOKEN is missing for PR creation', async () => {
+    process.env.GITHUB_WORKFLOW = 'test-workflow'
+    delete process.env.GITHUB_TOKEN
+
+    mockHappyPath()
+
+    await run()
+
+    expect(core.error).toHaveBeenCalledWith(
+      expect.stringMatching(/Configuration error:.*Missing GITHUB_TOKEN/)
+    )
+    expect(core.setFailed).toHaveBeenCalledWith(
+      expect.stringMatching(/Missing GITHUB_TOKEN/)
+    )
+    expect(mockCreatePullRequest).not.toHaveBeenCalled()
+  })
 })

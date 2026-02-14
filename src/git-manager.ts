@@ -168,14 +168,24 @@ export async function commitAndPush(
     .filter((c) => c.action !== 'delete')
     .map((c) => c.path)
 
+  // Defense-in-depth: reject paths starting with '-' to prevent git flag injection
+  const allPaths = [...addedOrModifiedPaths, ...deletedPaths]
+  for (const p of allPaths) {
+    if (p.startsWith('-')) {
+      throw new GitError(
+        `Refusing to stage file '${p}': paths starting with '-' could be interpreted as git flags`
+      )
+    }
+  }
+
   if (addedOrModifiedPaths.length > 0) {
     log.info(`Staging ${addedOrModifiedPaths.length} added/modified file(s)`)
-    await git(['add', ...addedOrModifiedPaths], workDir)
+    await git(['add', '--', ...addedOrModifiedPaths], workDir)
   }
 
   if (deletedPaths.length > 0) {
     log.info(`Staging ${deletedPaths.length} deleted file(s)`)
-    await git(['rm', ...deletedPaths], workDir)
+    await git(['rm', '--', ...deletedPaths], workDir)
   }
 
   // Commit

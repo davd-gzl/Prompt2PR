@@ -143,6 +143,7 @@ describe('OpenAIProvider', () => {
     const body = JSON.parse(options.body as string)
     expect(body.model).toBe('gpt-4o')
     expect(body.response_format).toEqual({ type: 'json_object' })
+    expect(body.max_tokens).toBe(16384)
     expect(body.messages).toEqual(VALID_REQUEST.messages)
   })
 
