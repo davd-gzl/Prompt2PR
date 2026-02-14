@@ -164,8 +164,10 @@ describe('git-manager.ts — commitAndPush()', () => {
     jest.resetAllMocks()
   })
 
-  it('executes the full git workflow: checkout, apply, add, commit, push', async () => {
-    // Mock: checkout -b, add, commit, push
+  it('executes the full git workflow: config, checkout, apply, add, commit, push', async () => {
+    // Mock: config user.name, config user.email, checkout -b, add, commit, push
+    mockGitSuccess() // git config user.name
+    mockGitSuccess() // git config user.email
     mockGitSuccess() // checkout -b
     mockGitSuccess() // git add
     mockGitSuccess() // git commit
@@ -187,17 +189,25 @@ describe('git-manager.ts — commitAndPush()', () => {
     )
 
     // Verify git commands were called in order
-    expect(mockGetExecOutput).toHaveBeenCalledTimes(4)
+    expect(mockGetExecOutput).toHaveBeenCalledTimes(6)
 
     const calls = mockGetExecOutput.mock.calls
     expect(calls[0][0]).toBe('git')
-    expect(calls[0][1]).toEqual(['checkout', '-b', 'prompt2pr/test-123'])
-    expect(calls[1][1]).toEqual(['add', 'src/main.ts'])
-    expect(calls[2][1]).toEqual(['commit', '-m', '[Prompt2PR] test'])
-    expect(calls[3][1]).toEqual(['push', 'origin', 'prompt2pr/test-123'])
+    expect(calls[0][1]).toEqual(['config', 'user.name', 'prompt2pr[bot]'])
+    expect(calls[1][1]).toEqual([
+      'config',
+      'user.email',
+      'prompt2pr[bot]@users.noreply.github.com'
+    ])
+    expect(calls[2][1]).toEqual(['checkout', '-b', 'prompt2pr/test-123'])
+    expect(calls[3][1]).toEqual(['add', 'src/main.ts'])
+    expect(calls[4][1]).toEqual(['commit', '-m', '[Prompt2PR] test'])
+    expect(calls[5][1]).toEqual(['push', 'origin', 'prompt2pr/test-123'])
   })
 
   it('throws GitError when branch creation fails', async () => {
+    mockGitSuccess() // git config user.name
+    mockGitSuccess() // git config user.email
     mockGitFailure('fatal: a branch named "x" already exists')
 
     await expect(
@@ -211,6 +221,8 @@ describe('git-manager.ts — commitAndPush()', () => {
   })
 
   it('throws GitError when push fails', async () => {
+    mockGitSuccess() // git config user.name
+    mockGitSuccess() // git config user.email
     mockGitSuccess() // checkout
     mockMkdir.mockResolvedValue(undefined)
     mockWriteFile.mockResolvedValue(undefined)

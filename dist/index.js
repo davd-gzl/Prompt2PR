@@ -33778,6 +33778,9 @@ async function applyChanges(changes, workDir) {
  */
 async function commitAndPush(changes, branchName, commitMessage, workDir) {
     log$7.info(`Creating branch: ${branchName}`);
+    // Configure git identity for the commit (required in GitHub Actions runners)
+    await git(['config', 'user.name', 'prompt2pr[bot]'], workDir);
+    await git(['config', 'user.email', 'prompt2pr[bot]@users.noreply.github.com'], workDir);
     // Create and checkout new branch
     await git(['checkout', '-b', branchName], workDir);
     // Apply file changes to disk
