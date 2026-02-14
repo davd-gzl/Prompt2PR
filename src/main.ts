@@ -85,10 +85,10 @@ export async function run(): Promise<void> {
     const llmResponse = await withRetry(() => provider.chat(request))
 
     // Step 5: Parse response
-    const changes = parseResponse(llmResponse)
+    const parsed = parseResponse(llmResponse)
 
     // Step 6: Check for empty changes (FR4, FR23)
-    if (changes.length === 0) {
+    if (parsed.files.length === 0) {
       log.info(
         `Scanned ${files.length} files matching ${config.paths.join(', ')}. ` +
           `Found 0 issues. No PR created.`
@@ -102,7 +102,7 @@ export async function run(): Promise<void> {
     }
 
     // Step 7: Validate changes against guardrails (FR14, FR15, FR29, FR30, FR31)
-    const validated = validateChanges(changes, config)
+    const validated = validateChanges(parsed.files, config)
 
     // Step 8: Calculate metrics for outputs
     const linesChanged = countLinesChanged(validated)
@@ -138,7 +138,8 @@ export async function run(): Promise<void> {
       branchName,
       config,
       metadata,
-      token
+      token,
+      parsed.summary
     )
 
     // Step 12: Set action outputs (FR28)
@@ -158,6 +159,9 @@ export async function run(): Promise<void> {
   } catch (error) {
     // Log structured error details for observability (FR27, NFR11)
     logErrorDetails(error)
+
+    // Set skipped output to false on error (FR11)
+    core.setOutput('skipped', 'false')
 
     // Fail the workflow run if an error occurs
     // Must handle both Error objects and other thrown values (NFR11: fail loudly)

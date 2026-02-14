@@ -65,22 +65,31 @@ function buildTitle(changes: FileChange[]): string {
 }
 
 /**
- * Build the PR body with prompt, summary, and metadata.
+ * Build the PR body with prompt, AI summary, changes list, and metadata.
  */
 function buildBody(
   prompt: string,
   changes: FileChange[],
-  metadata: RunMetadata
+  metadata: RunMetadata,
+  summary?: string
 ): string {
   const fileList = changes
     .map((c) => `- \`${c.path}\` (${c.action})`)
     .join('\n')
 
+  const summarySection = summary
+    ? `## Summary
+
+${summary}
+
+`
+    : ''
+
   return `## Prompt
 
 > ${prompt.replace(/\n/g, '\n> ')}
 
-## Changes
+${summarySection}## Changes
 
 ${fileList}
 
@@ -109,6 +118,7 @@ ${fileList}
  * @param config - The validated action configuration.
  * @param metadata - Run metadata for the PR body.
  * @param token - The GitHub token for API authentication.
+ * @param summary - Optional AI-generated narrative summary (FR21).
  * @returns The URL and number of the created PR.
  * @throws {GitError} If the GitHub API call fails.
  */
@@ -117,7 +127,8 @@ export async function createPullRequest(
   branchName: string,
   config: ActionConfig,
   metadata: RunMetadata,
-  token: string
+  token: string,
+  summary?: string
 ): Promise<PullRequestResult> {
   const { owner, repo } = github.context.repo
   const defaultBranch =
@@ -128,7 +139,7 @@ export async function createPullRequest(
     )?.default_branch ?? 'main'
 
   const title = buildTitle(changes)
-  const body = buildBody(config.prompt, changes, metadata)
+  const body = buildBody(config.prompt, changes, metadata, summary)
 
   log.info(`Creating PR: "${title}" (${branchName} → ${defaultBranch})`)
 

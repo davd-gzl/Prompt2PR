@@ -50,6 +50,8 @@ export interface FileChange {
 export interface LLMResponse {
   /** The file changes proposed by the LLM. Empty = no changes. */
   files: FileChange[]
+  /** Optional AI-generated narrative summary of changes (FR21). */
+  summary?: string
 }
 
 // ---------------------------------------------------------------------------

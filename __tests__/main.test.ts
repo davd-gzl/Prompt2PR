@@ -92,9 +92,10 @@ function mockHappyPath(): void {
   mockWithRetry.mockResolvedValue({
     files: [{ path: 'src/main.ts', content: 'updated', action: 'modify' }]
   })
-  mockParseResponse.mockReturnValue([
-    { path: 'src/main.ts', content: 'updated', action: 'modify' }
-  ])
+  mockParseResponse.mockReturnValue({
+    files: [{ path: 'src/main.ts', content: 'updated', action: 'modify' }],
+    summary: 'Updated main module.'
+  })
   mockValidateChanges.mockReturnValue([
     { path: 'src/main.ts', content: 'updated', action: 'modify' }
   ])
@@ -159,11 +160,25 @@ describe('main.ts — run()', () => {
     )
   })
 
+  it('passes the AI summary through to createPullRequest (FR21)', async () => {
+    process.env.GITHUB_WORKFLOW = 'test-workflow'
+    process.env.GITHUB_TOKEN = 'test-token'
+
+    mockHappyPath()
+
+    await run()
+
+    // createPullRequest is called with 6 args; the 6th is summary
+    expect(mockCreatePullRequest).toHaveBeenCalledTimes(1)
+    const callArgs = mockCreatePullRequest.mock.calls[0] as unknown[]
+    expect(callArgs[5]).toBe('Updated main module.')
+  })
+
   // -- Skip path (no changes) -----------------------------------------------
 
   it('skips PR creation when no changes are returned (FR4, FR23)', async () => {
     mockHappyPath()
-    mockParseResponse.mockReturnValue([]) // No changes
+    mockParseResponse.mockReturnValue({ files: [] }) // No changes
 
     await run()
 
@@ -233,6 +248,7 @@ describe('main.ts — run()', () => {
     expect(core.setFailed).toHaveBeenCalledWith(
       "Missing required input: 'prompt'"
     )
+    expect(core.setOutput).toHaveBeenCalledWith('skipped', 'false')
   })
 
   it('logs provider error details with provider name and status', async () => {
@@ -249,6 +265,7 @@ describe('main.ts — run()', () => {
       )
     )
     expect(core.setFailed).toHaveBeenCalledWith('Rate limit exceeded')
+    expect(core.setOutput).toHaveBeenCalledWith('skipped', 'false')
   })
 
   it('logs provider error without status code when not available', async () => {
@@ -263,6 +280,7 @@ describe('main.ts — run()', () => {
       expect.stringMatching(/Provider error \[openai\]:.*Network timeout/)
     )
     expect(core.setFailed).toHaveBeenCalledWith('Network timeout')
+    expect(core.setOutput).toHaveBeenCalledWith('skipped', 'false')
   })
 
   it('logs guardrail violation details and sets failed', async () => {
@@ -283,6 +301,7 @@ describe('main.ts — run()', () => {
     expect(core.setFailed).toHaveBeenCalledWith(
       'LLM response contains 15 file change(s), which exceeds the max_files limit of 10'
     )
+    expect(core.setOutput).toHaveBeenCalledWith('skipped', 'false')
   })
 
   it('logs git error details and sets failed', async () => {
@@ -299,6 +318,7 @@ describe('main.ts — run()', () => {
     expect(core.setFailed).toHaveBeenCalledWith(
       'git push failed (exit 128): rejected'
     )
+    expect(core.setOutput).toHaveBeenCalledWith('skipped', 'false')
   })
 
   it('logs parse error details and sets failed', async () => {
@@ -313,6 +333,7 @@ describe('main.ts — run()', () => {
       expect.stringMatching(/Response parse error:.*content is not valid JSON/)
     )
     expect(core.setFailed).toHaveBeenCalledWith('content is not valid JSON')
+    expect(core.setOutput).toHaveBeenCalledWith('skipped', 'false')
   })
 
   it('handles non-Error thrown values', async () => {
@@ -323,5 +344,6 @@ describe('main.ts — run()', () => {
     await run()
 
     expect(core.setFailed).toHaveBeenCalledWith('string error')
+    expect(core.setOutput).toHaveBeenCalledWith('skipped', 'false')
   })
 })

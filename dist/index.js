@@ -33661,6 +33661,10 @@ async function scanFiles(patterns, workDir = process.cwd()) {
         `${excludedBinary} binary files skipped, ` +
         `${excludedDirectory} directories skipped` +
         (excludedGitHub > 0 ? `, ${excludedGitHub} .github/ files excluded` : ''));
+    const totalExcluded = excludedBinary + excludedDirectory + excludedGitHub;
+    log$b.info(`Path-scope summary: ${matchedPaths.length} paths matched patterns [${patterns.join(', ')}], ` +
+        `${totalExcluded} excluded (${excludedBinary} binary, ${excludedDirectory} dirs, ${excludedGitHub} .github), ` +
+        `${results.length} files included`);
     return results;
 }
 
@@ -37926,17 +37930,24 @@ function buildTitle(changes) {
     return `[Prompt2PR] Update ${count} file(s): ${parts.join(', ')}`;
 }
 /**
- * Build the PR body with prompt, summary, and metadata.
+ * Build the PR body with prompt, AI summary, changes list, and metadata.
  */
-function buildBody(prompt, changes, metadata) {
+function buildBody(prompt, changes, metadata, summary) {
     const fileList = changes
         .map((c) => `- \`${c.path}\` (${c.action})`)
         .join('\n');
+    const summarySection = summary
+        ? `## Summary
+
+${summary}
+
+`
+        : '';
     return `## Prompt
 
 > ${prompt.replace(/\n/g, '\n> ')}
 
-## Changes
+${summarySection}## Changes
 
 ${fileList}
 
@@ -37963,14 +37974,15 @@ ${fileList}
  * @param config - The validated action configuration.
  * @param metadata - Run metadata for the PR body.
  * @param token - The GitHub token for API authentication.
+ * @param summary - Optional AI-generated narrative summary (FR21).
  * @returns The URL and number of the created PR.
  * @throws {GitError} If the GitHub API call fails.
  */
-async function createPullRequest(changes, branchName, config, metadata, token) {
+async function createPullRequest(changes, branchName, config, metadata, token, summary) {
     const { owner, repo } = githubExports.context.repo;
     const defaultBranch = githubExports.context.payload.repository?.default_branch ?? 'main';
     const title = buildTitle(changes);
-    const body = buildBody(config.prompt, changes, metadata);
+    const body = buildBody(config.prompt, changes, metadata, summary);
     log$8.info(`Creating PR: "${title}" (${branchName} → ${defaultBranch})`);
     const octokit = githubExports.getOctokit(token);
     let prNumber;
@@ -38042,6 +38054,7 @@ const SYSTEM_PROMPT = `You are a senior software engineer. The user will describ
 Your task is to produce the requested changes. Respond with ONLY a JSON object in this exact format:
 
 {
+  "summary": "<brief narrative summary of what was changed and why>",
   "files": [
     {
       "path": "<relative file path>",
@@ -38052,10 +38065,11 @@ Your task is to produce the requested changes. Respond with ONLY a JSON object i
 }
 
 Rules:
+- "summary" should be 1-3 sentences describing the changes at a high level.
 - "content" must contain the COMPLETE file content (not a diff).
 - For "delete" actions, set "content" to an empty string.
 - Do NOT include explanations or markdown fences — return raw JSON only.
-- If no changes are needed, return: { "files": [] }
+- If no changes are needed, return: { "summary": "No changes needed.", "files": [] }
 `;
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -38317,8 +38331,11 @@ class AnthropicProvider {
             throw new ProviderError('Malformed Anthropic response: expected { files: [...] } structure', this.name);
         }
         const files = parsed.files;
+        const summary = typeof parsed.summary === 'string'
+            ? parsed.summary
+            : undefined;
         log$6.info(`Received ${files.length} file change(s) from Anthropic`);
-        return { files };
+        return summary ? { files, summary } : { files };
     }
 }
 
@@ -38479,8 +38496,11 @@ class GitHubModelsProvider {
             throw new ProviderError('Malformed GitHub Models response: expected { files: [...] } structure', this.name);
         }
         const files = parsed.files;
+        const summary = typeof parsed.summary === 'string'
+            ? parsed.summary
+            : undefined;
         log$5.info(`Received ${files.length} file change(s) from GitHub Models`);
-        return { files };
+        return summary ? { files, summary } : { files };
     }
 }
 
@@ -38635,8 +38655,11 @@ class MistralProvider {
             throw new ProviderError('Malformed Mistral response: expected { files: [...] } structure', this.name);
         }
         const files = parsed.files;
+        const summary = typeof parsed.summary === 'string'
+            ? parsed.summary
+            : undefined;
         log$4.info(`Received ${files.length} file change(s) from Mistral`);
-        return { files };
+        return summary ? { files, summary } : { files };
     }
 }
 
@@ -38794,8 +38817,11 @@ class OpenAIProvider {
             throw new ProviderError('Malformed OpenAI response: expected { files: [...] } structure', this.name);
         }
         const files = parsed.files;
+        const summary = typeof parsed.summary === 'string'
+            ? parsed.summary
+            : undefined;
         log$3.info(`Received ${files.length} file change(s) from OpenAI`);
-        return { files };
+        return summary ? { files, summary } : { files };
     }
 }
 
@@ -38906,14 +38932,15 @@ function validateFileChange(entry, index) {
 // Main exported function
 // ---------------------------------------------------------------------------
 /**
- * Parse and validate an LLM response into a `FileChange[]` array.
+ * Parse and validate an LLM response into a `ParsedResponse`.
  *
  * Accepts the `LLMResponse` returned by a provider's `chat()` method,
- * validates each file change entry, and returns a typed array. An empty
- * `files` array is valid and signals "no changes needed" (FR4).
+ * validates each file change entry, and returns a typed result including
+ * any AI-generated summary. An empty `files` array is valid and signals
+ * "no changes needed" (FR4).
  *
  * @param response - The LLM response from a provider.
- * @returns A validated array of file changes.
+ * @returns A validated parsed response with file changes and optional summary.
  * @throws {ParseError} If the response structure is invalid or any entry is malformed.
  */
 function parseResponse(response) {
@@ -38924,7 +38951,7 @@ function parseResponse(response) {
     // Empty files array is valid — signals "no changes" (FR4)
     if (response.files.length === 0) {
         log$1.info('LLM returned no changes');
-        return [];
+        return { files: [], summary: response.summary };
     }
     const validated = [];
     for (let i = 0; i < response.files.length; i++) {
@@ -38934,7 +38961,7 @@ function parseResponse(response) {
         `${validated.filter((f) => f.action === 'modify').length} modify, ` +
         `${validated.filter((f) => f.action === 'create').length} create, ` +
         `${validated.filter((f) => f.action === 'delete').length} delete`);
-    return validated;
+    return { files: validated, summary: response.summary };
 }
 
 /**
@@ -39060,9 +39087,9 @@ async function run() {
         log.info(`Calling ${config.provider} (model: ${resolvedModel})`);
         const llmResponse = await withRetry(() => provider.chat(request));
         // Step 5: Parse response
-        const changes = parseResponse(llmResponse);
+        const parsed = parseResponse(llmResponse);
         // Step 6: Check for empty changes (FR4, FR23)
-        if (changes.length === 0) {
+        if (parsed.files.length === 0) {
             log.info(`Scanned ${files.length} files matching ${config.paths.join(', ')}. ` +
                 `Found 0 issues. No PR created.`);
             coreExports.setOutput('pr_url', '');
@@ -39073,7 +39100,7 @@ async function run() {
             return;
         }
         // Step 7: Validate changes against guardrails (FR14, FR15, FR29, FR30, FR31)
-        const validated = validateChanges(changes, config);
+        const validated = validateChanges(parsed.files, config);
         // Step 8: Calculate metrics for outputs
         const linesChanged = countLinesChanged(validated);
         // Step 9: Handle dry-run mode
@@ -39098,7 +39125,7 @@ async function run() {
             model: resolvedModel,
             filesScanned: files.length
         };
-        const pr = await createPullRequest(validated, branchName, config, metadata, token);
+        const pr = await createPullRequest(validated, branchName, config, metadata, token, parsed.summary);
         // Step 12: Set action outputs (FR28)
         coreExports.setOutput('pr_url', pr.url);
         coreExports.setOutput('pr_number', String(pr.number));
@@ -39114,6 +39141,8 @@ async function run() {
     catch (error) {
         // Log structured error details for observability (FR27, NFR11)
         logErrorDetails(error);
+        // Set skipped output to false on error (FR11)
+        coreExports.setOutput('skipped', 'false');
         // Fail the workflow run if an error occurs
         // Must handle both Error objects and other thrown values (NFR11: fail loudly)
         if (error instanceof Error) {

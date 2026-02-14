@@ -129,5 +129,13 @@ if [ $is_major_release = 'yes' ]; then
 	echo -e "Branch: ${BOLD_GREEN}releases/$new_major_release_tag${OFF} pushed to remote"
 fi
 
+# 11. Create a GitHub Release with auto-generated notes
+echo -e "Creating GitHub Release for ${BOLD_BLUE}$new_tag${OFF}..."
+if gh release create "$new_tag" --title "$new_tag" --generate-notes; then
+	echo -e "GitHub Release: ${BOLD_GREEN}$new_tag${OFF} created successfully"
+else
+	echo -e "${BOLD_RED}Warning:${OFF} Failed to create GitHub Release (gh CLI may not be available or authenticated)"
+fi
+
 # Completed
 echo -e "${BOLD_GREEN}Done!${OFF}"

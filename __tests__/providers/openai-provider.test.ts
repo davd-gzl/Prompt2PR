@@ -33,13 +33,16 @@ const VALID_REQUEST: ChatRequest = {
  * Create a mock successful OpenAI API response body.
  */
 function makeOpenAIResponse(
-  files: Array<{ path: string; content: string; action: string }>
+  files: Array<{ path: string; content: string; action: string }>,
+  summary?: string
 ): string {
+  const inner: Record<string, unknown> = { files }
+  if (summary !== undefined) inner.summary = summary
   return JSON.stringify({
     choices: [
       {
         message: {
-          content: JSON.stringify({ files })
+          content: JSON.stringify(inner)
         }
       }
     ]
@@ -399,5 +402,40 @@ describe('OpenAIProvider', () => {
         message: expect.stringMatching(/request failed/)
       })
     )
+  })
+
+  // -- Summary extraction (FR21) --------------------------------------------
+
+  it('extracts summary when present in LLM response', async () => {
+    const responseBody = makeOpenAIResponse(
+      [{ path: 'README.md', content: '# Updated', action: 'modify' }],
+      'Fixed broken links in docs.'
+    )
+
+    globalThis.fetch = jest
+      .fn<typeof fetch>()
+      .mockResolvedValue(mockFetchResponse(responseBody))
+
+    const provider = new OpenAIProvider('test-key')
+    const result = await provider.chat(VALID_REQUEST)
+
+    expect(result.summary).toBe('Fixed broken links in docs.')
+    expect(result.files).toHaveLength(1)
+  })
+
+  it('returns no summary when not present in LLM response', async () => {
+    const responseBody = makeOpenAIResponse([
+      { path: 'README.md', content: '# Updated', action: 'modify' }
+    ])
+
+    globalThis.fetch = jest
+      .fn<typeof fetch>()
+      .mockResolvedValue(mockFetchResponse(responseBody))
+
+    const provider = new OpenAIProvider('test-key')
+    const result = await provider.chat(VALID_REQUEST)
+
+    expect(result.summary).toBeUndefined()
+    expect(result.files).toHaveLength(1)
   })
 })

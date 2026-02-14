@@ -223,8 +223,13 @@ export class OpenAIProvider implements LLMProvider {
 
     const files = (parsed as Record<string, unknown[]>).files as FileChange[]
 
+    const summary =
+      typeof (parsed as Record<string, unknown>).summary === 'string'
+        ? ((parsed as Record<string, unknown>).summary as string)
+        : undefined
+
     log.info(`Received ${files.length} file change(s) from OpenAI`)
 
-    return { files }
+    return summary ? { files, summary } : { files }
   }
 }

@@ -42,18 +42,18 @@ describe('response-parser.ts — parseResponse()', () => {
 
     const result = parseResponse(response)
 
-    expect(result).toHaveLength(3)
-    expect(result[0]).toEqual({
+    expect(result.files).toHaveLength(3)
+    expect(result.files[0]).toEqual({
       path: 'src/main.ts',
       content: 'console.log("hello")',
       action: 'modify'
     })
-    expect(result[1]).toEqual({
+    expect(result.files[1]).toEqual({
       path: 'new-file.txt',
       content: 'new content',
       action: 'create'
     })
-    expect(result[2]).toEqual({
+    expect(result.files[2]).toEqual({
       path: 'old-file.txt',
       content: '',
       action: 'delete'
@@ -66,7 +66,7 @@ describe('response-parser.ts — parseResponse()', () => {
     const response: LLMResponse = { files: [] }
     const result = parseResponse(response)
 
-    expect(result).toEqual([])
+    expect(result.files).toEqual([])
   })
 
   // -- Missing fields -------------------------------------------------------
@@ -203,6 +203,43 @@ describe('response-parser.ts — parseResponse()', () => {
     expect(core.info).toHaveBeenCalledWith(expect.stringContaining('1 modify'))
     expect(core.info).toHaveBeenCalledWith(expect.stringContaining('1 create'))
   })
+
+  // -- Summary pass-through (FR21) -----------------------------------------
+
+  it('passes through summary when present in LLM response', () => {
+    const response: LLMResponse = {
+      files: [{ path: 'a.ts', content: 'code', action: 'modify' }],
+      summary: 'Fixed a broken import statement.'
+    }
+
+    const result = parseResponse(response)
+
+    expect(result.summary).toBe('Fixed a broken import statement.')
+    expect(result.files).toHaveLength(1)
+  })
+
+  it('returns undefined summary when not present in LLM response', () => {
+    const response: LLMResponse = {
+      files: [{ path: 'a.ts', content: 'code', action: 'modify' }]
+    }
+
+    const result = parseResponse(response)
+
+    expect(result.summary).toBeUndefined()
+    expect(result.files).toHaveLength(1)
+  })
+
+  it('passes through summary for empty file list', () => {
+    const response: LLMResponse = {
+      files: [],
+      summary: 'No changes needed.'
+    }
+
+    const result = parseResponse(response)
+
+    expect(result.files).toEqual([])
+    expect(result.summary).toBe('No changes needed.')
+  })
 })
 
 describe('response-parser.ts — parseRawResponse()', () => {
@@ -216,8 +253,8 @@ describe('response-parser.ts — parseRawResponse()', () => {
     })
 
     const result = parseRawResponse(raw)
-    expect(result).toHaveLength(1)
-    expect(result[0].path).toBe('test.ts')
+    expect(result.files).toHaveLength(1)
+    expect(result.files[0].path).toBe('test.ts')
   })
 
   it('throws ParseError for invalid JSON', () => {
@@ -255,6 +292,6 @@ describe('response-parser.ts — parseRawResponse()', () => {
 
   it('returns empty array for empty files', () => {
     const result = parseRawResponse('{"files": []}')
-    expect(result).toEqual([])
+    expect(result.files).toEqual([])
   })
 })

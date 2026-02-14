@@ -13,6 +13,20 @@ import { createLogger } from './logger.js'
 import type { FileChange, LLMResponse } from './providers/types.js'
 
 // ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+/**
+ * Result of parsing an LLM response — validated file changes plus optional summary.
+ */
+export interface ParsedResponse {
+  /** Validated file changes. */
+  files: FileChange[]
+  /** Optional AI-generated narrative summary (FR21). */
+  summary?: string
+}
+
+// ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
@@ -72,17 +86,18 @@ function validateFileChange(entry: unknown, index: number): FileChange {
 // ---------------------------------------------------------------------------
 
 /**
- * Parse and validate an LLM response into a `FileChange[]` array.
+ * Parse and validate an LLM response into a `ParsedResponse`.
  *
  * Accepts the `LLMResponse` returned by a provider's `chat()` method,
- * validates each file change entry, and returns a typed array. An empty
- * `files` array is valid and signals "no changes needed" (FR4).
+ * validates each file change entry, and returns a typed result including
+ * any AI-generated summary. An empty `files` array is valid and signals
+ * "no changes needed" (FR4).
  *
  * @param response - The LLM response from a provider.
- * @returns A validated array of file changes.
+ * @returns A validated parsed response with file changes and optional summary.
  * @throws {ParseError} If the response structure is invalid or any entry is malformed.
  */
-export function parseResponse(response: LLMResponse): FileChange[] {
+export function parseResponse(response: LLMResponse): ParsedResponse {
   log.info(`Parsing response with ${response.files.length} file change(s)`)
 
   if (!Array.isArray(response.files)) {
@@ -92,7 +107,7 @@ export function parseResponse(response: LLMResponse): FileChange[] {
   // Empty files array is valid — signals "no changes" (FR4)
   if (response.files.length === 0) {
     log.info('LLM returned no changes')
-    return []
+    return { files: [], summary: response.summary }
   }
 
   const validated: FileChange[] = []
@@ -108,20 +123,20 @@ export function parseResponse(response: LLMResponse): FileChange[] {
       `${validated.filter((f) => f.action === 'delete').length} delete`
   )
 
-  return validated
+  return { files: validated, summary: response.summary }
 }
 
 /**
- * Parse a raw JSON string into a validated `FileChange[]` array.
+ * Parse a raw JSON string into a validated `ParsedResponse`.
  *
  * Useful when working with raw response bodies that need both JSON parsing
  * and schema validation.
  *
  * @param rawJson - The raw JSON string from the LLM.
- * @returns A validated array of file changes.
+ * @returns A validated parsed response with file changes and optional summary.
  * @throws {ParseError} If the JSON is invalid or the structure is unexpected.
  */
-export function parseRawResponse(rawJson: string): FileChange[] {
+export function parseRawResponse(rawJson: string): ParsedResponse {
   let parsed: unknown
 
   try {

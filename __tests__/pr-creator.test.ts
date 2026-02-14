@@ -235,4 +235,46 @@ describe('pr-creator.ts — createPullRequest()', () => {
 
     expect(mockAddLabels).not.toHaveBeenCalled()
   })
+
+  // -- AI Summary in PR body (FR21) -----------------------------------------
+
+  it('includes Summary section in PR body when summary is provided', async () => {
+    mockCreate.mockResolvedValueOnce({
+      data: { number: 1, html_url: 'https://example.com/pr/1' }
+    })
+    mockAddLabels.mockResolvedValueOnce(undefined)
+
+    await createPullRequest(
+      SAMPLE_CHANGES,
+      'branch',
+      makeConfig(),
+      SAMPLE_METADATA,
+      'token',
+      'Fixed broken links in documentation files.'
+    )
+
+    const body = (mockCreate.mock.calls[0][0] as Record<string, unknown>)
+      .body as string
+    expect(body).toContain('## Summary')
+    expect(body).toContain('Fixed broken links in documentation files.')
+  })
+
+  it('omits Summary section from PR body when summary is undefined', async () => {
+    mockCreate.mockResolvedValueOnce({
+      data: { number: 1, html_url: 'https://example.com/pr/1' }
+    })
+    mockAddLabels.mockResolvedValueOnce(undefined)
+
+    await createPullRequest(
+      SAMPLE_CHANGES,
+      'branch',
+      makeConfig(),
+      SAMPLE_METADATA,
+      'token'
+    )
+
+    const body = (mockCreate.mock.calls[0][0] as Record<string, unknown>)
+      .body as string
+    expect(body).not.toContain('## Summary')
+  })
 })

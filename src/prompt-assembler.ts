@@ -37,6 +37,7 @@ export const SYSTEM_PROMPT = `You are a senior software engineer. The user will 
 Your task is to produce the requested changes. Respond with ONLY a JSON object in this exact format:
 
 {
+  "summary": "<brief narrative summary of what was changed and why>",
   "files": [
     {
       "path": "<relative file path>",
@@ -47,10 +48,11 @@ Your task is to produce the requested changes. Respond with ONLY a JSON object i
 }
 
 Rules:
+- "summary" should be 1-3 sentences describing the changes at a high level.
 - "content" must contain the COMPLETE file content (not a diff).
 - For "delete" actions, set "content" to an empty string.
 - Do NOT include explanations or markdown fences — return raw JSON only.
-- If no changes are needed, return: { "files": [] }
+- If no changes are needed, return: { "summary": "No changes needed.", "files": [] }
 `
 
 // ---------------------------------------------------------------------------

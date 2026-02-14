@@ -59,6 +59,7 @@ describe('prompt-assembler.ts — buildPrompt()', () => {
     expect(result.messages[0].content).toContain('"path"')
     expect(result.messages[0].content).toContain('"content"')
     expect(result.messages[0].content).toContain('"action"')
+    expect(result.messages[0].content).toContain('"summary"')
   })
 
   it('includes the user prompt in the user message', () => {

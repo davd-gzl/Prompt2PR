@@ -342,4 +342,35 @@ describe('file-scanner.ts — scanFiles()', () => {
     expect(result).toHaveLength(1)
     expect(result[0].path).toBe('foo.ts')
   })
+
+  // -- Path-scope summary log (Story 5.2) ----------------------------------
+
+  it('logs path-scope summary with matched/excluded/included counts', async () => {
+    const files = [
+      path.join(WORK_DIR, 'src/app.ts'),
+      path.join(WORK_DIR, 'image.png'),
+      path.join(WORK_DIR, 'src')
+    ]
+    setupGlob(files)
+    setupStat({
+      [files[0]]: { isDir: false, size: 100 },
+      [files[1]]: { isDir: false, size: 5000 },
+      [files[2]]: { isDir: true, size: 0 }
+    })
+    setupReadFile({
+      [files[0]]: 'export const app = true'
+    })
+
+    await scanFiles(['src/**'], WORK_DIR)
+
+    const scopeCall = (core.info as jest.Mock).mock.calls.find((call) =>
+      (call[0] as string).includes('Path-scope summary')
+    )
+    expect(scopeCall).toBeDefined()
+    expect(scopeCall![0]).toContain('3 paths matched')
+    expect(scopeCall![0]).toContain('2 excluded')
+    expect(scopeCall![0]).toContain('1 binary')
+    expect(scopeCall![0]).toContain('1 dirs')
+    expect(scopeCall![0]).toContain('1 files included')
+  })
 })

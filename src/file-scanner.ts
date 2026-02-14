@@ -179,5 +179,12 @@ export async function scanFiles(
       (excludedGitHub > 0 ? `, ${excludedGitHub} .github/ files excluded` : '')
   )
 
+  const totalExcluded = excludedBinary + excludedDirectory + excludedGitHub
+  log.info(
+    `Path-scope summary: ${matchedPaths.length} paths matched patterns [${patterns.join(', ')}], ` +
+      `${totalExcluded} excluded (${excludedBinary} binary, ${excludedDirectory} dirs, ${excludedGitHub} .github), ` +
+      `${results.length} files included`
+  )
+
   return results
 }
