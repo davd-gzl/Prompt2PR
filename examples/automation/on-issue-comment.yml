@@ -4,9 +4,19 @@
 # on an issue. The comment body becomes the prompt.
 # Uses GitHub Models (no external API key needed).
 #
+# SECURITY WARNING — Prompt Injection Risk:
+#   This workflow passes user-controlled input (issue comments) directly
+#   to an LLM. Any user who can comment on issues can craft adversarial
+#   prompts to manipulate the LLM output. Mitigations applied here:
+#   - Restrict to org members / collaborators via the 'if' condition
+#   - Narrow 'paths' scope to limit what the LLM can modify
+#   - Use low 'max_files' / 'max_changes' limits to reduce blast radius
+#   - Review every generated PR before merging
+#
 # Setup:
 #   1. Copy this file to .github/workflows/on-issue-comment.yml
 #   2. No API key needed — uses the built-in GITHUB_TOKEN
+#   3. IMPORTANT: Adjust the membership check below to match your org/team
 
 name: Prompt2PR on Comment
 
@@ -22,7 +32,12 @@ permissions:
 
 jobs:
   prompt2pr:
-    if: startsWith(github.event.comment.body, '/prompt2pr ')
+    if: >-
+      startsWith(github.event.comment.body, '/prompt2pr ') && (
+        github.event.comment.author_association == 'OWNER' ||
+        github.event.comment.author_association == 'MEMBER' ||
+        github.event.comment.author_association == 'COLLABORATOR'
+      )
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

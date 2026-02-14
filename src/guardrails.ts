@@ -3,7 +3,7 @@
  *
  * Validates LLM-generated file changes against safety limits before
  * any git operations are performed. Ensures `max_files`, `max_changes`,
- * `paths` scope, and `.github/` exclusion are enforced.
+ * `paths` scope, `.github/` exclusion, and per-file size limits are enforced.
  *
  * @see _bmad-output/planning-artifacts/epics.md#Story 5.1
  */
@@ -16,6 +16,17 @@ import type { ActionConfig } from './config.js'
 import { GuardrailError } from './errors.js'
 import { createLogger } from './logger.js'
 import type { FileChange } from './providers/types.js'
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+/**
+ * Maximum allowed content size per file (1 MB).
+ * Prevents resource exhaustion from LLM responses containing extremely
+ * large single-line content that would pass the line-count check.
+ */
+const MAX_FILE_CONTENT_BYTES = 1_048_576
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -110,13 +121,28 @@ export function validateChanges(
     }
   }
 
-  // --- Check .github/ exclusion (FR31) ---
+  // --- Check .github/ exclusion (FR31) — case-insensitive for safety ---
   for (const change of changes) {
-    if (change.path.startsWith('.github/') || change.path === '.github') {
+    const lowerPath = change.path.toLowerCase()
+    if (lowerPath.startsWith('.github/') || lowerPath === '.github') {
       throw new GuardrailError(
         `File '${change.path}' targets the .github/ directory, which is always protected. ` +
           `The LLM must not modify files in .github/.`
       )
+    }
+  }
+
+  // --- Check per-file content size (resource exhaustion prevention) ---
+  for (const change of changes) {
+    if (change.action !== 'delete') {
+      const contentBytes = new TextEncoder().encode(change.content).length
+      if (contentBytes > MAX_FILE_CONTENT_BYTES) {
+        throw new GuardrailError(
+          `File '${change.path}' content is ${contentBytes} bytes, ` +
+            `which exceeds the per-file limit of ${MAX_FILE_CONTENT_BYTES} bytes (1 MB). ` +
+            `This may indicate a malformed LLM response.`
+        )
+      }
     }
   }
 

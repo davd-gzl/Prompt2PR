@@ -31017,6 +31017,58 @@ function parsePositiveInt(value, name, defaultValue) {
     return parsed;
 }
 /**
+ * Known LLM provider base URL domains. When `base_url` is set, its hostname
+ * must either match one of these or be explicitly trusted by the user.
+ * Blocking arbitrary URLs prevents SSRF and API-key exfiltration.
+ */
+const ALLOWED_BASE_URL_HOSTS = new Set([
+    'api.mistral.ai',
+    'api.openai.com',
+    'api.anthropic.com',
+    'models.github.ai',
+    'models.inference.ai.azure.com'
+]);
+/**
+ * Validate a base URL for security: must be HTTPS and resolve to
+ * a known LLM provider host. Blocks SSRF, credential exfiltration to
+ * arbitrary endpoints, and plaintext-over-HTTP transmission.
+ *
+ * Self-hosted / proxy URLs can be allowed by adding the hostname to
+ * the `PROMPT2PR_ALLOWED_HOSTS` environment variable (comma-separated).
+ *
+ * @throws {ConfigError} If the URL is malformed, not HTTPS, or targets
+ *   an untrusted host.
+ */
+function validateBaseUrl(baseUrl) {
+    let parsed;
+    try {
+        parsed = new URL(baseUrl);
+    }
+    catch {
+        throw new ConfigError(`Invalid 'base_url': '${baseUrl}' is not a valid URL.`);
+    }
+    // Enforce HTTPS — API keys must never travel in plaintext
+    if (parsed.protocol !== 'https:') {
+        throw new ConfigError(`Invalid 'base_url': scheme must be 'https', got '${parsed.protocol.replace(':', '')}'. ` +
+            `API keys must not be sent over unencrypted connections.`);
+    }
+    // Build the full allowlist: built-in providers + user-defined hosts
+    const allowedHosts = new Set(ALLOWED_BASE_URL_HOSTS);
+    const extraHosts = (process.env.PROMPT2PR_ALLOWED_HOSTS ?? '')
+        .split(',')
+        .map((h) => h.trim().toLowerCase())
+        .filter((h) => h.length > 0);
+    for (const host of extraHosts) {
+        allowedHosts.add(host);
+    }
+    const hostname = parsed.hostname.toLowerCase();
+    if (!allowedHosts.has(hostname)) {
+        throw new ConfigError(`Invalid 'base_url': host '${hostname}' is not a recognised LLM provider. ` +
+            `Allowed hosts: ${[...allowedHosts].join(', ')}. ` +
+            `For self-hosted endpoints, add the hostname to the PROMPT2PR_ALLOWED_HOSTS env var.`);
+    }
+}
+/**
  * Parse a comma-separated string into a trimmed, non-empty string array.
  */
 function parseCommaSeparated(value) {
@@ -31053,8 +31105,23 @@ function validateConfig() {
     const provider = providerRaw;
     // --- Optional inputs with defaults ---
     const model = coreExports.getInput('model');
+    // Sanitize model name — only allow safe characters (alphanumeric, hyphens,
+    // dots, slashes, underscores, colons) to prevent parameter injection.
+    if (model && !/^[a-zA-Z0-9._/:@-]+$/.test(model)) {
+        throw new ConfigError(`Invalid 'model': '${model}'. Model names may only contain ` +
+            `alphanumeric characters, hyphens, dots, slashes, underscores, colons, and @.`);
+    }
     const baseUrl = coreExports.getInput('base_url');
+    // Validate base_url if provided (SSRF + credential-exfiltration prevention)
+    if (baseUrl) {
+        validateBaseUrl(baseUrl);
+    }
     const branchPrefix = coreExports.getInput('branch_prefix') || DEFAULT_BRANCH_PREFIX;
+    // Sanitize branch prefix — only allow safe git ref characters
+    if (!/^[a-zA-Z0-9._/-]+$/.test(branchPrefix)) {
+        throw new ConfigError(`Invalid 'branch_prefix': '${branchPrefix}'. ` +
+            `Branch prefixes may only contain alphanumeric characters, hyphens, dots, underscores, and slashes.`);
+    }
     const maxFiles = parsePositiveInt(coreExports.getInput('max_files'), 'max_files', DEFAULT_MAX_FILES);
     const maxChanges = parsePositiveInt(coreExports.getInput('max_changes'), 'max_changes', DEFAULT_MAX_CHANGES);
     // --- Paths ---
@@ -33640,8 +33707,9 @@ async function scanFiles(patterns, workDir = process.cwd()) {
             continue;
         }
         const relativePath = toRelativePosix(absPath, workDir);
-        // Defense-in-depth: double-check .github/ exclusion
-        if (relativePath.startsWith('.github/') || relativePath === '.github') {
+        // Defense-in-depth: double-check .github/ exclusion (case-insensitive)
+        const lowerRelPath = relativePath.toLowerCase();
+        if (lowerRelPath.startsWith('.github/') || lowerRelPath === '.github') {
             excludedGitHub++;
             continue;
         }
@@ -35955,10 +36023,19 @@ var picomatch = /*@__PURE__*/getDefaultExportFromCjs(picomatchExports);
  *
  * Validates LLM-generated file changes against safety limits before
  * any git operations are performed. Ensures `max_files`, `max_changes`,
- * `paths` scope, and `.github/` exclusion are enforced.
+ * `paths` scope, `.github/` exclusion, and per-file size limits are enforced.
  *
  * @see _bmad-output/planning-artifacts/epics.md#Story 5.1
  */
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+/**
+ * Maximum allowed content size per file (1 MB).
+ * Prevents resource exhaustion from LLM responses containing extremely
+ * large single-line content that would pass the line-count check.
+ */
+const MAX_FILE_CONTENT_BYTES = 1_048_576;
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
@@ -36036,11 +36113,23 @@ function validateChanges(changes, config) {
                 `All file paths must resolve within the repository.`);
         }
     }
-    // --- Check .github/ exclusion (FR31) ---
+    // --- Check .github/ exclusion (FR31) — case-insensitive for safety ---
     for (const change of changes) {
-        if (change.path.startsWith('.github/') || change.path === '.github') {
+        const lowerPath = change.path.toLowerCase();
+        if (lowerPath.startsWith('.github/') || lowerPath === '.github') {
             throw new GuardrailError(`File '${change.path}' targets the .github/ directory, which is always protected. ` +
                 `The LLM must not modify files in .github/.`);
+        }
+    }
+    // --- Check per-file content size (resource exhaustion prevention) ---
+    for (const change of changes) {
+        if (change.action !== 'delete') {
+            const contentBytes = new TextEncoder().encode(change.content).length;
+            if (contentBytes > MAX_FILE_CONTENT_BYTES) {
+                throw new GuardrailError(`File '${change.path}' content is ${contentBytes} bytes, ` +
+                    `which exceeds the per-file limit of ${MAX_FILE_CONTENT_BYTES} bytes (1 MB). ` +
+                    `This may indicate a malformed LLM response.`);
+            }
         }
     }
     // --- Check paths scope (FR29) ---
@@ -40452,7 +40541,7 @@ class AnthropicProvider {
             parsed = JSON.parse(textBlock.text);
         }
         catch {
-            throw new ProviderError(`Malformed Anthropic response: content is not valid JSON — ${textBlock.text.slice(0, 200)}`, this.name);
+            throw new ProviderError(`Malformed Anthropic response: content is not valid JSON (raw content redacted for security)`, this.name);
         }
         // Validate the expected shape: { files: [...] }
         if (typeof parsed !== 'object' ||
@@ -40624,7 +40713,7 @@ class BaseOpenAICompatibleProvider {
             parsed = JSON.parse(message.content);
         }
         catch {
-            throw new ProviderError(`Malformed ${this.displayName} response: content is not valid JSON — ${message.content.slice(0, 200)}`, this.name);
+            throw new ProviderError(`Malformed ${this.displayName} response: content is not valid JSON (raw content redacted for security)`, this.name);
         }
         // Validate the expected shape: { files: [...] }
         if (typeof parsed !== 'object' ||

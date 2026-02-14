@@ -127,6 +127,21 @@ describe('guardrails.ts — validateChanges()', () => {
     expect(() => validateChanges(changes, config)).toThrow(GuardrailError)
   })
 
+  it('throws GuardrailError for .GitHub/ with different casing (case-insensitive)', () => {
+    const changes = [makeChange({ path: '.GitHub/workflows/evil.yml' })]
+    const config = makeConfig()
+
+    expect(() => validateChanges(changes, config)).toThrow(GuardrailError)
+    expect(() => validateChanges(changes, config)).toThrow(/\.github\//)
+  })
+
+  it('throws GuardrailError for .GITHUB/ uppercase variant', () => {
+    const changes = [makeChange({ path: '.GITHUB' })]
+    const config = makeConfig()
+
+    expect(() => validateChanges(changes, config)).toThrow(GuardrailError)
+  })
+
   it('does not reject files that merely contain "github" in the path', () => {
     const changes = [makeChange({ path: 'src/github-utils.ts' })]
     const config = makeConfig()
@@ -249,5 +264,34 @@ describe('guardrails.ts — validateChanges()', () => {
     expect(() => validateChanges(changes, config)).toThrow(
       /lib\/other\.ts.*outside the configured paths scope.*src\/\*\*/
     )
+  })
+
+  // -- Per-file content size limit (resource exhaustion prevention) --------
+
+  it('throws GuardrailError when a file content exceeds 1 MB', () => {
+    // Create content slightly over 1 MB
+    const largeContent = 'x'.repeat(1_048_577)
+    const changes = [makeChange({ content: largeContent })]
+    const config = makeConfig({ maxChanges: 2_000_000 })
+
+    expect(() => validateChanges(changes, config)).toThrow(GuardrailError)
+    expect(() => validateChanges(changes, config)).toThrow(
+      /exceeds the per-file limit/
+    )
+  })
+
+  it('allows file content at exactly 1 MB', () => {
+    const content = 'x'.repeat(1_048_576)
+    const changes = [makeChange({ content })]
+    const config = makeConfig({ maxChanges: 2_000_000 })
+
+    expect(validateChanges(changes, config)).toHaveLength(1)
+  })
+
+  it('skips content size check for delete actions', () => {
+    const changes = [makeChange({ action: 'delete', content: '' })]
+    const config = makeConfig({ maxChanges: 1 })
+
+    expect(validateChanges(changes, config)).toHaveLength(1)
   })
 })

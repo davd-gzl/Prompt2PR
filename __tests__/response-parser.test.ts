@@ -264,6 +264,18 @@ describe('response-parser.ts — parseRawResponse()', () => {
     )
   })
 
+  it('does not leak raw LLM content in parse error messages', () => {
+    const secretContent = 'SUPER_SECRET_API_KEY=sk-12345'
+    expect(() => parseRawResponse(secretContent)).toThrow(
+      /redacted for security/
+    )
+    expect(() => parseRawResponse(secretContent)).toThrow(
+      expect.not.objectContaining({
+        message: expect.stringContaining(secretContent)
+      })
+    )
+  })
+
   it('throws ParseError for non-object JSON (e.g. array)', () => {
     expect(() => parseRawResponse('[]')).toThrow(ParseError)
     expect(() => parseRawResponse('[]')).toThrow(

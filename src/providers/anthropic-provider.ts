@@ -223,7 +223,7 @@ export class AnthropicProvider implements LLMProvider {
       parsed = JSON.parse(textBlock.text)
     } catch {
       throw new ProviderError(
-        `Malformed Anthropic response: content is not valid JSON — ${textBlock.text.slice(0, 200)}`,
+        `Malformed Anthropic response: content is not valid JSON (raw content redacted for security)`,
         this.name
       )
     }

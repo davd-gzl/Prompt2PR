@@ -143,7 +143,8 @@ export function parseRawResponse(rawJson: string): ParsedResponse {
     parsed = JSON.parse(rawJson)
   } catch {
     throw new ParseError(
-      `Failed to parse LLM response as JSON: ${rawJson.slice(0, 200)}`
+      `Failed to parse LLM response as JSON (first 200 chars redacted for security). ` +
+        `Ensure the LLM is configured to return valid JSON.`
     )
   }
 

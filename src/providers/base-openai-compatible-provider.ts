@@ -219,7 +219,7 @@ export abstract class BaseOpenAICompatibleProvider implements LLMProvider {
       parsed = JSON.parse(message.content)
     } catch {
       throw new ProviderError(
-        `Malformed ${this.displayName} response: content is not valid JSON — ${message.content.slice(0, 200)}`,
+        `Malformed ${this.displayName} response: content is not valid JSON (raw content redacted for security)`,
         this.name
       )
     }

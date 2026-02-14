@@ -85,7 +85,7 @@ describe('config.ts — validateConfig()', () => {
       label: 'maintenance,prompt2pr',
       branch_prefix: 'auto/',
       dry_run: 'true',
-      base_url: 'https://custom.api.example.com'
+      base_url: 'https://api.mistral.ai'
     })
     process.env.MISTRAL_API_KEY = 'sk-test-key'
 
@@ -101,7 +101,7 @@ describe('config.ts — validateConfig()', () => {
       labels: ['maintenance', 'prompt2pr'],
       branchPrefix: 'auto/',
       dryRun: true,
-      baseUrl: 'https://custom.api.example.com',
+      baseUrl: 'https://api.mistral.ai',
       apiKey: 'sk-test-key'
     })
   })
@@ -325,5 +325,110 @@ describe('config.ts — validateConfig()', () => {
       'anthropic',
       'github'
     ])
+  })
+
+  // -- base_url validation (SSRF + credential exfiltration prevention) -----
+
+  it('accepts a valid HTTPS base_url with a known provider host', () => {
+    mockValidInputs({ base_url: 'https://api.openai.com' })
+
+    const config = validateConfig()
+
+    expect(config.baseUrl).toBe('https://api.openai.com')
+  })
+
+  it('accepts an empty base_url without validation', () => {
+    mockValidInputs({ base_url: '' })
+
+    const config = validateConfig()
+
+    expect(config.baseUrl).toBe('')
+  })
+
+  it('throws ConfigError for non-HTTPS base_url', () => {
+    mockValidInputs({ base_url: 'http://api.openai.com' })
+
+    expect(() => validateConfig()).toThrow(ConfigError)
+    expect(() => validateConfig()).toThrow(/scheme must be 'https'/)
+  })
+
+  it('throws ConfigError for malformed base_url', () => {
+    mockValidInputs({ base_url: 'not-a-url' })
+
+    expect(() => validateConfig()).toThrow(ConfigError)
+    expect(() => validateConfig()).toThrow(/not a valid URL/)
+  })
+
+  it('throws ConfigError for base_url with unknown host', () => {
+    mockValidInputs({ base_url: 'https://evil.example.com' })
+
+    expect(() => validateConfig()).toThrow(ConfigError)
+    expect(() => validateConfig()).toThrow(/not a recognised LLM provider/)
+  })
+
+  it('allows custom host via PROMPT2PR_ALLOWED_HOSTS env var', () => {
+    mockValidInputs({ base_url: 'https://my-proxy.internal.corp' })
+    process.env.PROMPT2PR_ALLOWED_HOSTS = 'my-proxy.internal.corp'
+
+    const config = validateConfig()
+
+    expect(config.baseUrl).toBe('https://my-proxy.internal.corp')
+    delete process.env.PROMPT2PR_ALLOWED_HOSTS
+  })
+
+  it('throws ConfigError for file:// scheme base_url', () => {
+    mockValidInputs({ base_url: 'file:///etc/passwd' })
+
+    expect(() => validateConfig()).toThrow(ConfigError)
+    expect(() => validateConfig()).toThrow(/scheme must be 'https'/)
+  })
+
+  it('throws ConfigError for base_url pointing to cloud metadata', () => {
+    mockValidInputs({ base_url: 'https://169.254.169.254' })
+
+    expect(() => validateConfig()).toThrow(ConfigError)
+    expect(() => validateConfig()).toThrow(/not a recognised LLM provider/)
+  })
+
+  // -- model validation ---------------------------------------------------
+
+  it('accepts valid model names with dots, slashes, and hyphens', () => {
+    mockValidInputs({ model: 'openai/gpt-4o' })
+
+    const config = validateConfig()
+
+    expect(config.model).toBe('openai/gpt-4o')
+  })
+
+  it('throws ConfigError for model names with invalid characters', () => {
+    mockValidInputs({ model: 'model; rm -rf /' })
+
+    expect(() => validateConfig()).toThrow(ConfigError)
+    expect(() => validateConfig()).toThrow(/Invalid 'model'/)
+  })
+
+  it('allows empty model name', () => {
+    mockValidInputs({ model: '' })
+
+    const config = validateConfig()
+
+    expect(config.model).toBe('')
+  })
+
+  // -- branch_prefix validation -------------------------------------------
+
+  it('throws ConfigError for branch_prefix with invalid characters', () => {
+    mockValidInputs({ branch_prefix: 'bad prefix!!' })
+
+    expect(() => validateConfig()).toThrow(ConfigError)
+    expect(() => validateConfig()).toThrow(/Invalid 'branch_prefix'/)
+  })
+
+  it('accepts valid branch_prefix with slashes and hyphens', () => {
+    mockValidInputs({ branch_prefix: 'auto/fix-' })
+
+    const config = validateConfig()
+
+    expect(config.branchPrefix).toBe('auto/fix-')
   })
 })

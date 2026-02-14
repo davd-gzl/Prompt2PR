@@ -154,8 +154,9 @@ export async function scanFiles(
 
     const relativePath = toRelativePosix(absPath, workDir)
 
-    // Defense-in-depth: double-check .github/ exclusion
-    if (relativePath.startsWith('.github/') || relativePath === '.github') {
+    // Defense-in-depth: double-check .github/ exclusion (case-insensitive)
+    const lowerRelPath = relativePath.toLowerCase()
+    if (lowerRelPath.startsWith('.github/') || lowerRelPath === '.github') {
       excludedGitHub++
       continue
     }

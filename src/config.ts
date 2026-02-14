@@ -116,6 +116,69 @@ function parsePositiveInt(
 }
 
 /**
+ * Known LLM provider base URL domains. When `base_url` is set, its hostname
+ * must either match one of these or be explicitly trusted by the user.
+ * Blocking arbitrary URLs prevents SSRF and API-key exfiltration.
+ */
+const ALLOWED_BASE_URL_HOSTS = new Set([
+  'api.mistral.ai',
+  'api.openai.com',
+  'api.anthropic.com',
+  'models.github.ai',
+  'models.inference.ai.azure.com'
+])
+
+/**
+ * Validate a base URL for security: must be HTTPS and resolve to
+ * a known LLM provider host. Blocks SSRF, credential exfiltration to
+ * arbitrary endpoints, and plaintext-over-HTTP transmission.
+ *
+ * Self-hosted / proxy URLs can be allowed by adding the hostname to
+ * the `PROMPT2PR_ALLOWED_HOSTS` environment variable (comma-separated).
+ *
+ * @throws {ConfigError} If the URL is malformed, not HTTPS, or targets
+ *   an untrusted host.
+ */
+function validateBaseUrl(baseUrl: string): void {
+  let parsed: URL
+  try {
+    parsed = new URL(baseUrl)
+  } catch {
+    throw new ConfigError(
+      `Invalid 'base_url': '${baseUrl}' is not a valid URL.`
+    )
+  }
+
+  // Enforce HTTPS — API keys must never travel in plaintext
+  if (parsed.protocol !== 'https:') {
+    throw new ConfigError(
+      `Invalid 'base_url': scheme must be 'https', got '${parsed.protocol.replace(':', '')}'. ` +
+        `API keys must not be sent over unencrypted connections.`
+    )
+  }
+
+  // Build the full allowlist: built-in providers + user-defined hosts
+  const allowedHosts = new Set(ALLOWED_BASE_URL_HOSTS)
+  const extraHosts = (process.env.PROMPT2PR_ALLOWED_HOSTS ?? '')
+    .split(',')
+    .map((h) => h.trim().toLowerCase())
+    .filter((h) => h.length > 0)
+  for (const host of extraHosts) {
+    allowedHosts.add(host)
+  }
+
+  const hostname = parsed.hostname.toLowerCase()
+
+  if (!allowedHosts.has(hostname)) {
+    throw new ConfigError(
+      `Invalid 'base_url': host '${hostname}' is not a recognised LLM provider. ` +
+        `Allowed hosts: ${[...allowedHosts].join(', ')}. ` +
+        `For self-hosted endpoints, add the hostname to the PROMPT2PR_ALLOWED_HOSTS env var.`
+    )
+  }
+}
+
+/**
  * Parse a comma-separated string into a trimmed, non-empty string array.
  */
 function parseCommaSeparated(value: string): string[] {
@@ -165,8 +228,32 @@ export function validateConfig(): ActionConfig {
   // --- Optional inputs with defaults ---
 
   const model = core.getInput('model')
+
+  // Sanitize model name — only allow safe characters (alphanumeric, hyphens,
+  // dots, slashes, underscores, colons) to prevent parameter injection.
+  if (model && !/^[a-zA-Z0-9._/:@-]+$/.test(model)) {
+    throw new ConfigError(
+      `Invalid 'model': '${model}'. Model names may only contain ` +
+        `alphanumeric characters, hyphens, dots, slashes, underscores, colons, and @.`
+    )
+  }
+
   const baseUrl = core.getInput('base_url')
+
+  // Validate base_url if provided (SSRF + credential-exfiltration prevention)
+  if (baseUrl) {
+    validateBaseUrl(baseUrl)
+  }
+
   const branchPrefix = core.getInput('branch_prefix') || DEFAULT_BRANCH_PREFIX
+
+  // Sanitize branch prefix — only allow safe git ref characters
+  if (!/^[a-zA-Z0-9._/-]+$/.test(branchPrefix)) {
+    throw new ConfigError(
+      `Invalid 'branch_prefix': '${branchPrefix}'. ` +
+        `Branch prefixes may only contain alphanumeric characters, hyphens, dots, underscores, and slashes.`
+    )
+  }
 
   const maxFiles = parsePositiveInt(
     core.getInput('max_files'),
