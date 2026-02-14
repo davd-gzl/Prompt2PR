@@ -23,7 +23,7 @@ jobs:
           prompt: ${{ github.event.inputs.prompt }}
           provider: openai
           model: gpt-4o
-          paths: '**/*.md'
+          paths: 'README.md'
           max_files: 5
           max_changes: 100
           base_url: https://models.inference.ai.azure.com
