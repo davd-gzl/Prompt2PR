@@ -1,0 +1,50 @@
+# Cleanup TODOs — Prompt2PR Example Workflow
+#
+# Finds resolved or stale TODO/FIXME/HACK comments and cleans them up.
+# Runs weekly on Friday at 10:00 UTC and can be triggered manually.
+#
+# Setup:
+#   1. Copy this file to .github/workflows/cleanup-todos.yml
+#   2. Set your LLM provider API key as a GitHub Secret
+#   3. Adjust the paths to match your source directories
+
+name: Cleanup TODOs
+
+on:
+  schedule:
+    # Run every Friday at 10:00 UTC
+    - cron: '0 10 * * 5'
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: 'Custom prompt (optional — overrides default)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  cleanup-todos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: Davphla/Prompt2PR@v1
+        with:
+          prompt: >-
+            ${{ github.event.inputs.prompt || 'Find all TODO, FIXME, HACK, and
+            XXX comments in the source code. For each one, determine if it has
+            already been resolved by the surrounding code. If the task described
+            in the comment is already done, remove the comment. If the comment
+            references a specific issue number, check if the surrounding code
+            addresses it. Leave unresolved TODOs in place.' }}
+          provider: 'anthropic'
+          paths: 'src/**,lib/**'
+          max_files: 10
+          max_changes: 200
+          label: 'prompt2pr,cleanup'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

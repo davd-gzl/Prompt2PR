@@ -15,6 +15,8 @@ const { MistralProvider } =
   await import('../../src/providers/mistral-provider.js')
 const { AnthropicProvider } =
   await import('../../src/providers/anthropic-provider.js')
+const { OpenAIProvider } =
+  await import('../../src/providers/openai-provider.js')
 const { ConfigError } = await import('../../src/errors.js')
 
 // ---------------------------------------------------------------------------
@@ -68,6 +70,15 @@ describe('provider-factory.ts — createProvider()', () => {
     expect(provider).toBeInstanceOf(AnthropicProvider)
     expect(provider.name).toBe('anthropic')
     expect(provider.defaultModel).toBe('claude-sonnet-4-20250514')
+  })
+
+  it('creates an OpenAIProvider for provider "openai"', () => {
+    const config = makeConfig({ provider: 'openai' })
+    const provider = createProvider(config)
+
+    expect(provider).toBeInstanceOf(OpenAIProvider)
+    expect(provider.name).toBe('openai')
+    expect(provider.defaultModel).toBe('gpt-4o')
   })
 
   // -- Unknown provider error -----------------------------------------------

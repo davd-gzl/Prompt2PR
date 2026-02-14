@@ -1,0 +1,48 @@
+# Fix Dead Links — Prompt2PR Example Workflow
+#
+# Scans markdown files for broken links and fixes them automatically.
+# Runs weekly on Monday at 9:00 UTC and can be triggered manually.
+#
+# Setup:
+#   1. Copy this file to .github/workflows/fix-dead-links.yml
+#   2. Set your LLM provider API key as a GitHub Secret
+#   3. Adjust the cron schedule and paths as needed
+
+name: Fix Dead Links
+
+on:
+  schedule:
+    # Run every Monday at 9:00 UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: 'Custom prompt (optional — overrides default)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  fix-links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: Davphla/Prompt2PR@v1
+        with:
+          prompt: >-
+            ${{ github.event.inputs.prompt || 'Scan all markdown files for
+            broken or dead links (HTTP 404, 410, or unreachable URLs). For each
+            broken link, either update it to the correct URL or remove it with a
+            note. Do not change any other content.' }}
+          provider: 'mistral'
+          paths: '**/*.md'
+          max_files: 10
+          max_changes: 200
+          label: 'prompt2pr,dead-links'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
