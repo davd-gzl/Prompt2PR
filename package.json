@@ -2,16 +2,16 @@
   "name": "prompt2pr",
   "description": "A GitHub Action that turns plain-English prompts into Pull Requests using LLMs",
   "version": "1.0.0",
-  "author": "Davphla",
+  "author": "davd-gzl",
   "type": "module",
   "private": true,
-  "homepage": "https://github.com/Davphla/Prompt2PR",
+  "homepage": "https://github.com/davd-gzl/Prompt2PR",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Davphla/Prompt2PR.git"
+    "url": "git+https://github.com/davd-gzl/Prompt2PR.git"
   },
   "bugs": {
-    "url": "https://github.com/Davphla/Prompt2PR/issues"
+    "url": "https://github.com/davd-gzl/Prompt2PR/issues"
   },
   "keywords": [
     "actions",

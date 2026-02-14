@@ -28,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: Davphla/Prompt2PR@v1
+      - uses: davd-gzl/Prompt2PR@v1
         with:
           prompt: >-
             ${{ github.event.inputs.prompt }} Preserve all markdown formatting,

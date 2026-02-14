@@ -1,6 +1,6 @@
 # Prompt2PR
 
-[![CI](https://github.com/Davphla/Prompt2PR/actions/workflows/ci.yml/badge.svg)](https://github.com/Davphla/Prompt2PR/actions/workflows/ci.yml)
+[![CI](https://github.com/davd-gzl/Prompt2PR/actions/workflows/ci.yml/badge.svg)](https://github.com/davd-gzl/Prompt2PR/actions/workflows/ci.yml)
 [![Coverage](./badges/coverage.svg)](./badges/coverage.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: Davphla/Prompt2PR@v1
+      - uses: davd-gzl/Prompt2PR@v1
         with:
           prompt: ${{ github.event.inputs.prompt }}
           provider: mistral
@@ -92,7 +92,7 @@ All inputs are configured via the standard GitHub Actions `with:` syntax.
 Use outputs in downstream steps:
 
 ```yaml
-- uses: Davphla/Prompt2PR@v1
+- uses: davd-gzl/Prompt2PR@v1
   id: prompt2pr
   with:
     prompt: 'Fix all dead links in markdown files'
@@ -155,7 +155,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: Davphla/Prompt2PR@v1
+      - uses: davd-gzl/Prompt2PR@v1
         with:
           prompt: 'Fix typos in README.md'
           provider: github
