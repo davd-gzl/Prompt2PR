@@ -96,8 +96,15 @@ describe('retry.ts — withRetry()', () => {
   // -- Non-retryable errors (e.g., 429 rate limit) -------------------------
 
   it('does not retry non-retryable ProviderError (429 rate limit)', async () => {
-    const rateLimitError = new ProviderError('rate limited', 'github', 429, false)
-    const fn = jest.fn<() => Promise<string>>().mockRejectedValue(rateLimitError)
+    const rateLimitError = new ProviderError(
+      'rate limited',
+      'github',
+      429,
+      false
+    )
+    const fn = jest
+      .fn<() => Promise<string>>()
+      .mockRejectedValue(rateLimitError)
 
     await expect(withRetry(fn, { retries: 3, backoffMs: 50 })).rejects.toThrow(
       rateLimitError
