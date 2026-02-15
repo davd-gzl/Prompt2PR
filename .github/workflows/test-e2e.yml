@@ -27,4 +27,4 @@ jobs:
           max_files: 5
           max_changes: 100
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_MODELS_PAT }}

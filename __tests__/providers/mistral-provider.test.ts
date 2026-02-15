@@ -236,7 +236,8 @@ describe('MistralProvider', () => {
     await expect(provider.chat(VALID_REQUEST)).rejects.toThrow(
       expect.objectContaining({
         name: 'ProviderError',
-        message: expect.stringMatching(/retry after 30s/)
+        message: expect.stringMatching(/retry after 30s/),
+        retryable: false
       })
     )
   })

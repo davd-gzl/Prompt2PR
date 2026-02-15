@@ -153,7 +153,8 @@ export class AnthropicProvider implements LLMProvider {
         throw new ProviderError(
           `${message}${retryInfo}`,
           this.name,
-          response.status
+          response.status,
+          false // 429 is not retryable — rate limits won't resolve in seconds
         )
       }
 

@@ -4,8 +4,13 @@
  * Wraps any async operation with configurable retry count and backoff.
  * Used primarily for LLM provider API calls (NFR14: retry once, 5s backoff).
  *
+ * Errors that are explicitly marked as non-retryable (e.g., HTTP 429 rate
+ * limits) are re-thrown immediately without consuming retry attempts.
+ *
  * @see _bmad-output/planning-artifacts/architecture.md#Decision 4
  */
+
+import { ProviderError } from './errors.js'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -77,6 +82,12 @@ export async function withRetry<T>(
       return await fn()
     } catch (error) {
       lastError = error
+
+      // Non-retryable errors (e.g., 429 rate limits) are re-thrown
+      // immediately — retrying would just waste another request.
+      if (error instanceof ProviderError && !error.retryable) {
+        throw error
+      }
 
       // If we have retries remaining, wait and try again
       if (attempt < retries) {

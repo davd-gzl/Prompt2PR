@@ -30,6 +30,7 @@ describe('errors.ts', () => {
     expect(err.message).toBe('api failed')
     expect(err.provider).toBe('mistral')
     expect(err.statusCode).toBe(429)
+    expect(err.retryable).toBe(true) // default is retryable
   })
 
   it('ProviderError works without statusCode', () => {
@@ -39,6 +40,14 @@ describe('errors.ts', () => {
     expect(err.message).toBe('timeout')
     expect(err.provider).toBe('openai')
     expect(err.statusCode).toBeUndefined()
+    expect(err.retryable).toBe(true) // default is retryable
+  })
+
+  it('ProviderError supports explicit retryable=false for rate limits', () => {
+    const err = new ProviderError('rate limited', 'github', 429, false)
+    expect(err).toBeInstanceOf(ProviderError)
+    expect(err.statusCode).toBe(429)
+    expect(err.retryable).toBe(false)
   })
 
   it('GitError has correct name and message', () => {

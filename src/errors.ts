@@ -23,12 +23,17 @@ export class ConfigError extends Error {
 /**
  * Thrown when an LLM provider API call fails.
  * Includes the provider name and optional HTTP status code for diagnostics.
+ *
+ * When `retryable` is `false`, the retry utility should **not** attempt
+ * to re-execute the request (e.g., HTTP 429 rate limits that won't
+ * resolve within a reasonable backoff window).
  */
 export class ProviderError extends Error {
   constructor(
     message: string,
     public readonly provider: string,
-    public readonly statusCode?: number
+    public readonly statusCode?: number,
+    public readonly retryable: boolean = true
   ) {
     super(message)
     this.name = 'ProviderError'

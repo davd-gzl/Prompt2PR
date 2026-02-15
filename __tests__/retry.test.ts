@@ -76,7 +76,7 @@ describe('retry.ts — withRetry()', () => {
   // -- Error type preservation --------------------------------------------
 
   it('preserves ProviderError type through retries', async () => {
-    const providerError = new ProviderError('rate limited', 'mistral', 429)
+    const providerError = new ProviderError('server error', 'mistral', 500)
     const fn = jest.fn<() => Promise<string>>().mockRejectedValue(providerError)
 
     const promise = withRetry(fn, { retries: 1, backoffMs: 50 })
@@ -90,7 +90,21 @@ describe('retry.ts — withRetry()', () => {
     expect(err).toBeInstanceOf(ProviderError)
     expect(err).toBe(providerError) // exact same reference
     expect((err as ProviderErrorType).provider).toBe('mistral')
-    expect((err as ProviderErrorType).statusCode).toBe(429)
+    expect((err as ProviderErrorType).statusCode).toBe(500)
+  })
+
+  // -- Non-retryable errors (e.g., 429 rate limit) -------------------------
+
+  it('does not retry non-retryable ProviderError (429 rate limit)', async () => {
+    const rateLimitError = new ProviderError('rate limited', 'github', 429, false)
+    const fn = jest.fn<() => Promise<string>>().mockRejectedValue(rateLimitError)
+
+    await expect(withRetry(fn, { retries: 3, backoffMs: 50 })).rejects.toThrow(
+      rateLimitError
+    )
+
+    // Should be called only once — no retries
+    expect(fn).toHaveBeenCalledTimes(1)
   })
 
   // -- Default options (NFR14: 1 retry, 5000ms backoff) -------------------
