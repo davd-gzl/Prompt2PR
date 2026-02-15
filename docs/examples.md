@@ -123,10 +123,10 @@ Workflows that handle routine cleanup and housekeeping.
 **File:**
 [`examples/maintenance/cleanup-todos.yml`](https://github.com/davd-gzl/Prompt2PR/blob/main/examples/maintenance/cleanup-todos.yml)
 
-Finds TODO, FIXME, HACK, and XXX comments in source code. Determines whether
+Finds todo, FIXME, HACK, and XXX comments in source code. Determines whether
 each one has been resolved by the surrounding code. Removes resolved comments
 and leaves unresolved ones in place. Note: the LLM cannot check your issue
-tracker — if a TODO references an issue number, it judges from surrounding code
+tracker — if a todo references an issue number, it judges from surrounding code
 only.
 
 **Trigger:** Weekly cron (Friday) + manual dispatch

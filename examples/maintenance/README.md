@@ -7,7 +7,7 @@ schedule to keep your codebase tidy without manual intervention.
 
 ### cleanup-todos.yml
 
-Finds TODO, FIXME, HACK, and XXX comments in source code. Reads the surrounding
+Finds todo, FIXME, HACK, and XXX comments in source code. Reads the surrounding
 code to judge whether each one has been addressed. Removes resolved comments and
 leaves unresolved ones in place. Note: the LLM cannot check your issue tracker.
 
@@ -23,7 +23,7 @@ traces on errors. Does not change application logic.
 
 ### fix-dead-links.yml
 
-Scans markdown files for links that are likely broken: malformed URLs,
+Scans Markdown files for links that are likely broken: malformed URLs,
 known-dead domains, relative links that don't match repository files, and
 outdated versioned documentation URLs. Note: the LLM cannot make live HTTP
 requests — it relies on pattern recognition and training knowledge.

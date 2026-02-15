@@ -6,7 +6,7 @@ your project.
 
 > All examples use a specific provider, but **providers are interchangeable**.
 > Swap `provider:` and the corresponding API key to use any supported provider.
-
+>
 > **Single-shot design.** Prompt2PR makes one LLM call per run — it cannot
 > iterate, run tests, or verify its own output. The generated PRs are a starting
 > point. Always review before merging, especially for code changes.

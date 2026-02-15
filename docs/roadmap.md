@@ -64,7 +64,7 @@ with:
 
 ### Bootstrap CLI
 
-A CLI tool or companion action that scaffolds Prompt2PR workflows:
+A command-line tool or companion action that scaffolds Prompt2PR workflows:
 
 ```bash
 npx prompt2pr init
@@ -138,7 +138,7 @@ All major providers already support tool use / function calling:
 | Mistral       | Chat API      | `tool_calls` field, same loop pattern               |
 | GitHub Models | Inherited     | Depends on upstream model provider                  |
 
-### Tradeoffs
+### Trade-offs
 
 |                | Single-shot (current)          | Agentic                      |
 | -------------- | ------------------------------ | ---------------------------- |

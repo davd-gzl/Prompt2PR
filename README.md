@@ -243,7 +243,7 @@ your repository. See each category's readme for detailed descriptions.
 > **Providers are interchangeable.** Each example uses a specific provider, but
 > you can swap `provider:` and the corresponding API key to use any supported
 > provider.
-
+>
 > **Single-shot design.** Prompt2PR makes one LLM call per run — it cannot
 > browse the internet, run tests, or iterate on its output. The examples below
 > are designed with this in mind.
