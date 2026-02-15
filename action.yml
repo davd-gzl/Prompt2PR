@@ -1,5 +1,7 @@
 name: Prompt2PR
-description: Turn prompts into Pull Requests using LLMs.
+description:
+  Turn prompts into Pull Requests with LLMs - on push, on schedule, or on
+  demand.
 author: davd-gzl
 branding:
   icon: git-pull-request
