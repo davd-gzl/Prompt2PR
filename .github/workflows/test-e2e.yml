@@ -24,7 +24,7 @@ jobs:
           provider: github
           model: openai/gpt-4o
           paths: 'README.md'
-          max_files: 5
-          max_changes: 100
+          max_files: 1
+          max_changes: 20000
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
