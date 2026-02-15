@@ -7,7 +7,7 @@
 > A GitHub Action that turns prompts into Pull Requests using LLMs. Point it at
 > files, describe what to fix, and get an automated PR.
 
----
+/!\ This is early production, please report potential issues / security issues
 
 ## Quick Start
 
