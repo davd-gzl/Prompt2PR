@@ -2,7 +2,8 @@
  * Unit tests for the guardrails module — src/guardrails.ts
  *
  * Tests cover: within limits, exceeds max_files, exceeds max_changes,
- * out-of-scope path, .github/ path, edge cases (exactly at limit).
+ * out-of-scope path, .github/ path, edge cases (exactly at limit),
+ * and diff-based change counting.
  */
 import { jest } from '@jest/globals'
 import * as core from '../__fixtures__/core.js'
@@ -10,10 +11,12 @@ import * as core from '../__fixtures__/core.js'
 // Mock @actions/core before importing the module under test
 jest.unstable_mockModule('@actions/core', () => core)
 
-const { validateChanges } = await import('../src/guardrails.js')
+const { validateChanges, countLinesChanged } =
+  await import('../src/guardrails.js')
 const { GuardrailError } = await import('../src/errors.js')
 
 import type { ActionConfig } from '../src/config.js'
+import type { FileContext } from '../src/file-scanner.js'
 import type { FileChange } from '../src/providers/types.js'
 
 // ---------------------------------------------------------------------------
@@ -220,14 +223,14 @@ describe('guardrails.ts — validateChanges()', () => {
     expect(validateChanges(changes, config)).toHaveLength(10)
   })
 
-  // -- max_changes limit (FR15, FR30) --------------------------------------
+  // -- max_changes limit (FR15, FR30) — diff-based counting ----------------
 
-  it('throws GuardrailError when total lines exceed max_changes', () => {
-    // 201 lines should exceed limit of 200
+  it('throws GuardrailError when total lines exceed max_changes (create action)', () => {
+    // 201 new lines in a create action should exceed limit of 200
     const longContent = Array.from({ length: 201 }, (_, i) => `line ${i}`).join(
       '\n'
     )
-    const changes = [makeChange({ content: longContent })]
+    const changes = [makeChange({ content: longContent, action: 'create' })]
     const config = makeConfig({ maxChanges: 200 })
 
     expect(() => validateChanges(changes, config)).toThrow(GuardrailError)
@@ -236,19 +239,84 @@ describe('guardrails.ts — validateChanges()', () => {
     )
   })
 
-  it('passes when total lines exactly equals max_changes', () => {
-    // 5 lines of content = 5 lines changed
+  it('passes when total lines exactly equals max_changes (create action)', () => {
+    // 5 lines of content in a create = 5 lines changed
     const content = 'a\nb\nc\nd\ne'
-    const changes = [makeChange({ content })]
+    const changes = [makeChange({ content, action: 'create' })]
     const config = makeConfig({ maxChanges: 5 })
 
     expect(validateChanges(changes, config)).toHaveLength(1)
   })
 
-  it('counts delete actions as 1 line changed', () => {
+  it('counts delete actions as original file line count when scanned', () => {
+    const originalContent = 'line1\nline2\nline3'
+    const scannedFiles: FileContext[] = [
+      { path: 'src/main.ts', content: originalContent, size: 100 }
+    ]
+    const changes = [makeChange({ action: 'delete', content: '' })]
+    const config = makeConfig({ maxChanges: 3 })
+
+    expect(validateChanges(changes, config, scannedFiles)).toHaveLength(1)
+  })
+
+  it('counts delete actions as 1 when original not in scanned files', () => {
     const changes = [makeChange({ action: 'delete', content: '' })]
     const config = makeConfig({ maxChanges: 1 })
 
+    expect(validateChanges(changes, config)).toHaveLength(1)
+  })
+
+  it('counts only diff lines for modify when original is available', () => {
+    // Original has 100 lines, new content changes 1 line → 2 changed (1 remove + 1 add)
+    const originalLines = Array.from({ length: 100 }, (_, i) => `line ${i}`)
+    const newLines = [...originalLines]
+    newLines[50] = 'CHANGED LINE 50'
+
+    const scannedFiles: FileContext[] = [
+      {
+        path: 'src/main.ts',
+        content: originalLines.join('\n'),
+        size: 1000
+      }
+    ]
+    const changes = [makeChange({ content: newLines.join('\n') })]
+    // 2 changed lines (1 removal + 1 addition) should be well under 200
+    const config = makeConfig({ maxChanges: 200 })
+
+    expect(validateChanges(changes, config, scannedFiles)).toHaveLength(1)
+  })
+
+  it('rejects modify that exceeds max_changes via diff', () => {
+    // Original has 10 lines, new content replaces all 10 → 20 diff lines
+    const originalLines = Array.from({ length: 10 }, (_, i) => `old ${i}`)
+    const newLines = Array.from({ length: 10 }, (_, i) => `new ${i}`)
+
+    const scannedFiles: FileContext[] = [
+      {
+        path: 'src/main.ts',
+        content: originalLines.join('\n'),
+        size: 100
+      }
+    ]
+    const changes = [makeChange({ content: newLines.join('\n') })]
+    // 20 diff lines (10 removals + 10 additions), limit is 10
+    const config = makeConfig({ maxChanges: 10 })
+
+    expect(() => validateChanges(changes, config, scannedFiles)).toThrow(
+      GuardrailError
+    )
+    expect(() => validateChanges(changes, config, scannedFiles)).toThrow(
+      /exceeds the max_changes limit of 10/
+    )
+  })
+
+  it('falls back to full line count for modify without scanned original', () => {
+    // No scanned files → falls back to counting all new content lines
+    const content = 'a\nb\nc\nd\ne' // 5 lines
+    const changes = [makeChange({ content })]
+    const config = makeConfig({ maxChanges: 5 })
+
+    // Should pass: 5 lines <= 5 max
     expect(validateChanges(changes, config)).toHaveLength(1)
   })
 
@@ -301,5 +369,115 @@ describe('guardrails.ts — validateChanges()', () => {
     const config = makeConfig({ maxChanges: 1 })
 
     expect(validateChanges(changes, config)).toHaveLength(1)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// countLinesChanged — diff-based counting
+// ---------------------------------------------------------------------------
+
+describe('guardrails.ts — countLinesChanged()', () => {
+  it('counts all lines for create action (no original)', () => {
+    const changes: FileChange[] = [
+      { path: 'new-file.ts', content: 'a\nb\nc', action: 'create' }
+    ]
+    expect(countLinesChanged(changes)).toBe(3)
+  })
+
+  it('counts 0 for modify with identical content', () => {
+    const content = 'line1\nline2\nline3'
+    const scannedFiles: FileContext[] = [
+      { path: 'src/main.ts', content, size: 100 }
+    ]
+    const changes: FileChange[] = [
+      { path: 'src/main.ts', content, action: 'modify' }
+    ]
+    expect(countLinesChanged(changes, scannedFiles)).toBe(0)
+  })
+
+  it('counts only changed lines for modify (single line edit)', () => {
+    const original = 'line1\nline2\nline3'
+    const modified = 'line1\nLINE2_CHANGED\nline3'
+    const scannedFiles: FileContext[] = [
+      { path: 'src/main.ts', content: original, size: 100 }
+    ]
+    const changes: FileChange[] = [
+      { path: 'src/main.ts', content: modified, action: 'modify' }
+    ]
+    // 1 line removed + 1 line added = 2
+    expect(countLinesChanged(changes, scannedFiles)).toBe(2)
+  })
+
+  it('counts additions when lines are added', () => {
+    const original = 'line1\nline2'
+    const modified = 'line1\nline2\nline3\nline4'
+    const scannedFiles: FileContext[] = [
+      { path: 'src/main.ts', content: original, size: 50 }
+    ]
+    const changes: FileChange[] = [
+      { path: 'src/main.ts', content: modified, action: 'modify' }
+    ]
+    // 2 lines added, 0 removed = 2
+    expect(countLinesChanged(changes, scannedFiles)).toBe(2)
+  })
+
+  it('counts removals when lines are deleted from content', () => {
+    const original = 'line1\nline2\nline3\nline4'
+    const modified = 'line1\nline4'
+    const scannedFiles: FileContext[] = [
+      { path: 'src/main.ts', content: original, size: 50 }
+    ]
+    const changes: FileChange[] = [
+      { path: 'src/main.ts', content: modified, action: 'modify' }
+    ]
+    // 2 lines removed, 0 added = 2
+    expect(countLinesChanged(changes, scannedFiles)).toBe(2)
+  })
+
+  it('counts original file lines for delete action when scanned', () => {
+    const scannedFiles: FileContext[] = [
+      { path: 'src/main.ts', content: 'a\nb\nc\nd\ne', size: 50 }
+    ]
+    const changes: FileChange[] = [
+      { path: 'src/main.ts', content: '', action: 'delete' }
+    ]
+    // 5 lines being deleted
+    expect(countLinesChanged(changes, scannedFiles)).toBe(5)
+  })
+
+  it('counts 1 for delete action when original not in scanned files', () => {
+    const changes: FileChange[] = [
+      { path: 'src/unknown.ts', content: '', action: 'delete' }
+    ]
+    expect(countLinesChanged(changes)).toBe(1)
+  })
+
+  it('falls back to full line count for modify without scanned original', () => {
+    const changes: FileChange[] = [
+      { path: 'src/main.ts', content: 'a\nb\nc', action: 'modify' }
+    ]
+    // No scanned files → counts all 3 lines
+    expect(countLinesChanged(changes)).toBe(3)
+  })
+
+  it('handles multiple files with mixed actions', () => {
+    const scannedFiles: FileContext[] = [
+      { path: 'src/a.ts', content: 'old1\nold2\nold3', size: 50 },
+      { path: 'src/b.ts', content: 'x\ny\nz', size: 30 }
+    ]
+    const changes: FileChange[] = [
+      // modify: change 1 line → 2 diff lines
+      { path: 'src/a.ts', content: 'old1\nNEW2\nold3', action: 'modify' },
+      // delete: 3 original lines
+      { path: 'src/b.ts', content: '', action: 'delete' },
+      // create: 2 new lines
+      { path: 'src/c.ts', content: 'new1\nnew2', action: 'create' }
+    ]
+    // 2 (modify diff) + 3 (delete original lines) + 2 (create) = 7
+    expect(countLinesChanged(changes, scannedFiles)).toBe(7)
+  })
+
+  it('counts 0 for empty changes array', () => {
+    expect(countLinesChanged([])).toBe(0)
   })
 })

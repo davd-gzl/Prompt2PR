@@ -102,10 +102,10 @@ export async function run(): Promise<void> {
     }
 
     // Step 7: Validate changes against guardrails (FR14, FR15, FR29, FR30, FR31)
-    const validated = validateChanges(parsed.files, config)
+    const validated = validateChanges(parsed.files, config, files)
 
     // Step 8: Calculate metrics for outputs
-    const linesChanged = countLinesChanged(validated)
+    const linesChanged = countLinesChanged(validated, files)
 
     // Step 9: Handle dry-run mode
     if (config.dryRun) {
