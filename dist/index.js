@@ -36069,29 +36069,91 @@ const MAX_FILE_CONTENT_BYTES = 1_048_576;
 // ---------------------------------------------------------------------------
 const log$6 = createLogger$1('guardrails');
 /**
- * Count the total number of output lines across all file changes.
+ * Compute a simple line-level diff count between two strings.
  *
- * **Important:** This counts the total line count of the new file content,
- * NOT the number of lines that differ from the original. A one-line edit to
- * a 500-line file counts as 500 lines. This is because the LLM returns full
- * file content, not diffs, so we cannot compute a true diff without the
- * original file contents (which are not passed through to this layer).
+ * Uses the Myers-style longest-common-subsequence (LCS) approach to count
+ * the number of added and removed lines. This gives the same result as a
+ * unified diff with no context: each line that appears only in `oldText` is
+ * a removal, and each line that appears only in `newText` is an addition.
  *
- * For deletes, each deletion counts as 1 change (the deletion itself).
+ * @returns The total number of changed lines (additions + deletions).
+ */
+function diffLineCount(oldText, newText) {
+    const oldLines = oldText.split('\n');
+    const newLines = newText.split('\n');
+    // Compute LCS length using a classic DP approach (O(m*n) space,
+    // but files are capped at 1 MB so this is bounded).
+    const m = oldLines.length;
+    const n = newLines.length;
+    // Optimise: use two rows instead of full matrix
+    let prev = new Uint32Array(n + 1);
+    let curr = new Uint32Array(n + 1);
+    for (let i = 1; i <= m; i++) {
+        for (let j = 1; j <= n; j++) {
+            if (oldLines[i - 1] === newLines[j - 1]) {
+                curr[j] = prev[j - 1] + 1;
+            }
+            else {
+                curr[j] = Math.max(prev[j], curr[j - 1]);
+            }
+        }
+        [prev, curr] = [curr, prev];
+        curr.fill(0);
+    }
+    const lcsLength = prev[n];
+    // Changed lines = lines removed from old + lines added in new
+    const removals = m - lcsLength;
+    const additions = n - lcsLength;
+    return removals + additions;
+}
+/**
+ * Count the total number of actually changed lines across all file changes
+ * by diffing against the original scanned file contents.
+ *
+ * - **create**: All lines in the new content are additions (no original).
+ * - **delete**: All lines in the original file are removals. If the original
+ *   was not in the scanned set, counts as 1 (the deletion operation itself).
+ * - **modify**: Computes a line-level diff between original and new content.
+ *   If the original was not in the scanned set (e.g. file wasn't matched by
+ *   the configured paths), falls back to counting all new lines.
  *
  * @param changes - The file changes to measure.
- * @returns Total output line count across all changes.
+ * @param scannedFiles - The original file contents from the repository scan.
+ * @returns Total changed line count across all changes.
  */
-function countLinesChanged(changes) {
+function countLinesChanged(changes, scannedFiles = []) {
+    // Build a lookup map for O(1) access to original content
+    const originalByPath = new Map();
+    for (const file of scannedFiles) {
+        originalByPath.set(file.path, file.content);
+    }
     let total = 0;
     for (const change of changes) {
-        if (change.action === 'delete') {
-            total += 1;
+        if (change.action === 'create') {
+            // New file — every line is an addition
+            total += change.content.split('\n').length;
+        }
+        else if (change.action === 'delete') {
+            const original = originalByPath.get(change.path);
+            if (original !== undefined) {
+                // Count lines being removed
+                total += original.split('\n').length;
+            }
+            else {
+                // Original not in scan set — count as 1 (the deletion itself)
+                total += 1;
+            }
         }
         else {
-            // Count lines in the new content
-            const lines = change.content.split('\n').length;
-            total += lines;
+            // modify
+            const original = originalByPath.get(change.path);
+            if (original !== undefined) {
+                total += diffLineCount(original, change.content);
+            }
+            else {
+                // Original not available — fall back to counting all new lines
+                total += change.content.split('\n').length;
+            }
         }
     }
     return total;
@@ -36121,10 +36183,11 @@ function matchesPatterns(filePath, patterns) {
  *
  * @param changes - The file changes from the response parser.
  * @param config - The validated action configuration.
+ * @param scannedFiles - Original file contents for diff-based change counting.
  * @returns The validated file changes (unchanged if all pass).
  * @throws {GuardrailError} If any limit is violated.
  */
-function validateChanges(changes, config) {
+function validateChanges(changes, config, scannedFiles = []) {
     log$6.info(`Validating ${changes.length} file change(s) against guardrails`);
     // --- Check path traversal (security) ---
     for (const change of changes) {
@@ -36180,7 +36243,7 @@ function validateChanges(changes, config) {
             `Increase the 'max_files' input or ask the LLM to change fewer files.`);
     }
     // --- Check max_changes limit (FR15, FR30) ---
-    const totalLines = countLinesChanged(changes);
+    const totalLines = countLinesChanged(changes, scannedFiles);
     if (totalLines > config.maxChanges) {
         throw new GuardrailError(`LLM response contains ${totalLines} total lines changed, ` +
             `which exceeds the max_changes limit of ${config.maxChanges}. ` +
@@ -41308,9 +41371,9 @@ async function run() {
             return;
         }
         // Step 7: Validate changes against guardrails (FR14, FR15, FR29, FR30, FR31)
-        const validated = validateChanges(parsed.files, config);
+        const validated = validateChanges(parsed.files, config, files);
         // Step 8: Calculate metrics for outputs
-        const linesChanged = countLinesChanged(validated);
+        const linesChanged = countLinesChanged(validated, files);
         // Step 9: Handle dry-run mode
         if (config.dryRun) {
             log.info(`Dry run: would create PR with ${validated.length} file(s), ${linesChanged} line(s) changed`);
