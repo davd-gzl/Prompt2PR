@@ -1,0 +1,27 @@
+docs:
+  - title: 'Getting Started'
+    children:
+      - title: 'Home'
+        url: /
+      - title: 'Getting Started'
+        url: /getting-started/
+
+  - title: 'Reference'
+    children:
+      - title: 'Configuration'
+        url: /configuration/
+      - title: 'Providers'
+        url: /providers/
+      - title: 'Examples'
+        url: /examples/
+
+  - title: 'Internals'
+    children:
+      - title: 'Architecture'
+        url: /architecture/
+      - title: 'Troubleshooting'
+        url: /troubleshooting/
+      - title: 'Contributing'
+        url: /contributing/
+      - title: 'Roadmap'
+        url: /roadmap/

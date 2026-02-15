@@ -1,7 +1,13 @@
 # Cleanup TODOs — Prompt2PR Example Workflow
 #
 # Finds resolved or stale TODO/FIXME/HACK comments and cleans them up.
-# Runs weekly on Friday at 10:00 UTC and can be triggered manually.
+# The LLM reads the surrounding code to judge whether a TODO has been
+# addressed. This works well as a single-shot task because the judgment
+# is local — the LLM only needs the file context, not external state.
+#
+# Note: The LLM cannot check your issue tracker. If a TODO references
+# an issue number, the LLM will only judge from the surrounding code
+# whether the task appears complete.
 #
 # Setup:
 #   1. Copy this file to .github/workflows/cleanup-todos.yml
@@ -35,11 +41,11 @@ jobs:
         with:
           prompt: >-
             ${{ github.event.inputs.prompt || 'Find all TODO, FIXME, HACK, and
-            XXX comments in the source code. For each one, determine if it has
-            already been resolved by the surrounding code. If the task described
-            in the comment is already done, remove the comment. If the comment
-            references a specific issue number, check if the surrounding code
-            addresses it. Leave unresolved TODOs in place.' }}
+            XXX comments in the source code. For each one, read the surrounding
+            code to determine if the described task has already been
+            implemented. If the TODO is clearly resolved by the surrounding
+            code, remove the comment. Leave unresolved TODOs in place. Do not
+            change any code — only add or remove comments.' }}
           provider: 'anthropic'
           paths: 'src/**,lib/**'
           max_files: 10

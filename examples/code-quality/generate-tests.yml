@@ -1,7 +1,13 @@
 # Generate Missing Tests — Prompt2PR Example Workflow
 #
 # Scans source files for untested functions and generates unit tests.
-# Uses OpenAI. Runs weekly on Thursday at 7:00 UTC and can be triggered manually.
+# The LLM reads both source and test files to understand existing patterns,
+# then creates new tests that follow the same style.
+#
+# Important: The LLM cannot execute the generated tests. The PR should be
+# treated as a starting point — review the tests, run your test suite,
+# and fix any issues before merging. Tests may need adjustments for
+# mocking, fixtures, or edge cases the LLM couldn't infer.
 #
 # Setup:
 #   1. Copy this file to .github/workflows/generate-tests.yml
@@ -36,10 +42,11 @@ jobs:
           prompt: >-
             ${{ github.event.inputs.prompt || 'Analyze the source files and
             their corresponding test files. Identify exported functions or
-            classes that have no test coverage. For each untested function,
-            create a new test or add test cases to the existing test file. Use
-            Jest with TypeScript. Follow the existing test patterns in the
-            project. Only create tests — do not modify source files.' }}
+            classes that have no test coverage. For each untested export, create
+            test cases in the appropriate test file following the existing test
+            patterns (describe/it structure, naming conventions, assertion
+            style). Use Jest with TypeScript. Focus on happy-path and basic
+            error cases. Only create tests — do not modify source files.' }}
           provider: 'openai'
           paths: 'src/**,__tests__/**'
           max_files: 5

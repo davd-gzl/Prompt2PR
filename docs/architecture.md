@@ -1,7 +1,7 @@
 ---
-layout: default
+layout: single
 title: Architecture
-nav_order: 6
+permalink: /architecture/
 ---
 
 # Architecture
@@ -191,4 +191,4 @@ src/
 
 ---
 
-Next: [Troubleshooting]({% link troubleshooting.md %})
+Next: [Troubleshooting](/troubleshooting/)

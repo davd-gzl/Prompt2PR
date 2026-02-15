@@ -1,7 +1,7 @@
 ---
-layout: default
+layout: single
 title: Contributing
-nav_order: 8
+permalink: /contributing/
 ---
 
 # Contributing
@@ -148,10 +148,10 @@ npm run package
 npm run all
 ```
 
-{: .important } The `dist/` directory is committed to the repository. After
+**Important:** The `dist/` directory is committed to the repository. After
 making changes to source code, always run `npm run package` and commit the
 updated `dist/index.js`. The `check-dist` CI workflow verifies that `dist/`
-matches the source.
+matches the source. {: .notice--warning }
 
 ---
 

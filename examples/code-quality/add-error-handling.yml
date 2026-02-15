@@ -1,8 +1,14 @@
 # Add Error Handling — Prompt2PR Example Workflow
 #
 # Scans source files for missing error handling and adds try/catch blocks,
-# input validation, and descriptive error messages.
-# Uses Mistral. Runs manually with a generous change budget.
+# input validation, and descriptive error messages. Works well as a
+# single-shot task for focused scopes — the LLM can spot unhandled
+# promise rejections, missing null checks, and bare throws by reading
+# the code structure.
+#
+# Note: The LLM cannot run your code to verify the changes compile or
+# pass tests. Always review the generated PR and run your test suite
+# before merging.
 #
 # Setup:
 #   1. Copy this file to .github/workflows/add-error-handling.yml
@@ -32,12 +38,13 @@ jobs:
       - uses: davd-gzl/Prompt2PR@v1
         with:
           prompt: >-
-            ${{ github.event.inputs.prompt || 'Review all source files for
-            missing error handling. Add try/catch blocks around async
-            operations, validate function inputs, and replace generic throws
-            with descriptive error messages that include context about what
-            failed and why. Preserve existing behavior — only add defensive
-            code.' }}
+            ${{ github.event.inputs.prompt || 'Review source files for missing
+            error handling. For each issue found: (1) Wrap unhandled async/await
+            calls in try/catch blocks. (2) Add null/undefined checks for
+            function parameters that are used without validation. (3) Replace
+            bare "throw new Error()" with descriptive messages that include what
+            operation failed and relevant variable values. Preserve existing
+            behavior — only add defensive code.' }}
           provider: 'mistral'
           paths: 'src/**'
           max_files: 10

@@ -1,7 +1,9 @@
 # Improve Logging — Prompt2PR Example Workflow
 #
-# Adds structured logging to source files: log levels, context objects,
-# and consistent formatting. Uses OpenAI. Runs manually.
+# Replaces bare console.log calls with structured logging: appropriate
+# log levels, contextual information, and consistent formatting.
+# Works well as a single-shot task because the changes are mechanical
+# and the LLM can infer the right log level from context.
 #
 # Setup:
 #   1. Copy this file to .github/workflows/improve-logging.yml
@@ -33,8 +35,9 @@ jobs:
           prompt: >-
             ${{ github.event.inputs.prompt || 'Review all source files and
             improve logging: replace console.log with a structured logger, add
-            contextual information to log messages (function name, relevant IDs,
-            timestamps), use appropriate log levels (debug, info, warn, error),
+            contextual information to log messages (function name, relevant
+            IDs), use appropriate log levels (debug for verbose output, info for
+            normal operations, warn for recoverable issues, error for failures),
             and ensure errors are logged with stack traces. Do not change
             application logic.' }}
           provider: 'openai'

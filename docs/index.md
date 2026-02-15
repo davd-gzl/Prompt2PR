@@ -1,21 +1,17 @@
 ---
-layout: default
+layout: single
 title: Home
-nav_order: 1
 permalink: /
 ---
 
 # Prompt2PR
 
-A GitHub Action that turns prompts into Pull Requests using LLMs. {: .fs-6
-.fw-300 }
+A GitHub Action that turns prompts into Pull Requests using LLMs.
 
-Point it at files, describe what to fix, and get an automated PR. {: .fs-5
-.fw-300 }
+Point it at files, describe what to fix, and get an automated PR.
 
-[Get Started]({% link getting-started.md %}){: .btn .btn-primary .fs-5 .mb-4
-.mb-md-0 .mr-2 } [View on GitHub](https://github.com/davd-gzl/Prompt2PR){: .btn
-.fs-5 .mb-4 .mb-md-0 }
+[Get Started](/getting-started/){: .btn .btn--primary .btn--large }
+[View on GitHub](https://github.com/davd-gzl/Prompt2PR){: .btn .btn--large }
 
 ---
 
@@ -85,5 +81,4 @@ jobs:
 
 ---
 
-Ready to get started? Head to the [Getting
-Started]({% link getting-started.md %}) guide.
+Ready to get started? Head to the [Getting Started](/getting-started/) guide.

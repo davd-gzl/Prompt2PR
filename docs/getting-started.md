@@ -1,7 +1,7 @@
 ---
-layout: default
+layout: single
 title: Getting Started
-nav_order: 2
+permalink: /getting-started/
 ---
 
 # Getting Started
@@ -73,8 +73,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-{: .note } Replace `provider: mistral` and `MISTRAL_API_KEY` with your chosen
-provider and its corresponding secret.
+**Note:** Replace `provider: mistral` and `MISTRAL_API_KEY` with your chosen
+provider and its corresponding secret. {: .notice--info }
 
 ## Step 4: Enable PR Creation
 
@@ -135,9 +135,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-{: .important } GitHub Models requires the `models: read` permission and a
-GitHub Copilot subscription.
+**Important:** GitHub Models requires the `models: read` permission and a GitHub
+Copilot subscription. {: .notice--warning }
 
 ---
 
-Next: [Configuration Reference]({% link configuration.md %})
+Next: [Configuration Reference](/configuration/)

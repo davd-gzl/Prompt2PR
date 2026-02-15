@@ -7,18 +7,22 @@ your project.
 > All examples use a specific provider, but **providers are interchangeable**.
 > Swap `provider:` and the corresponding API key to use any supported provider.
 
+> **Single-shot design.** Prompt2PR makes one LLM call per run — it cannot
+> iterate, run tests, or verify its own output. The generated PRs are a starting
+> point. Always review before merging, especially for code changes.
+
 ## Categories
 
 ### [Code Quality](code-quality/)
 
 Workflows that improve code structure, safety, and standards compliance.
 
-| Workflow                                                        | Description                                              |
-| --------------------------------------------------------------- | -------------------------------------------------------- |
-| [enforce-style-guide.yml](code-quality/enforce-style-guide.yml) | Fix naming conventions, add JSDoc, replace magic numbers |
-| [add-error-handling.yml](code-quality/add-error-handling.yml)   | Add try/catch blocks and input validation                |
-| [deprecation-cleanup.yml](code-quality/deprecation-cleanup.yml) | Replace deprecated APIs with modern alternatives         |
-| [generate-tests.yml](code-quality/generate-tests.yml)           | Generate unit tests for untested functions               |
+| Workflow                                                        | Description                                      |
+| --------------------------------------------------------------- | ------------------------------------------------ |
+| [enforce-style-guide.yml](code-quality/enforce-style-guide.yml) | Fix naming conventions and replace magic numbers |
+| [add-jsdoc.yml](code-quality/add-jsdoc.yml)                     | Add JSDoc comments to exported functions         |
+| [add-error-handling.yml](code-quality/add-error-handling.yml)   | Add try/catch blocks and input validation        |
+| [generate-tests.yml](code-quality/generate-tests.yml)           | Generate unit tests for untested functions       |
 
 ### [Documentation](documentation/)
 
@@ -38,7 +42,7 @@ Workflows that handle routine cleanup and housekeeping tasks.
 | ------------------------------------------------------ | ------------------------------------------- |
 | [cleanup-todos.yml](maintenance/cleanup-todos.yml)     | Remove resolved TODO/FIXME/HACK comments    |
 | [improve-logging.yml](maintenance/improve-logging.yml) | Replace console.log with structured logging |
-| [fix-dead-links.yml](maintenance/fix-dead-links.yml)   | Find and fix broken links in Markdown files |
+| [fix-dead-links.yml](maintenance/fix-dead-links.yml)   | Find likely-broken links in Markdown files  |
 
 ### [Automation](automation/)
 

@@ -1,7 +1,7 @@
 ---
-layout: default
+layout: single
 title: Examples
-nav_order: 5
+permalink: /examples/
 ---
 
 # Examples
@@ -13,9 +13,13 @@ All example files are in the
 [`examples/`](https://github.com/davd-gzl/Prompt2PR/tree/main/examples)
 directory.
 
-{: .note } Each example uses a specific provider, but **providers are
+**Note:** Each example uses a specific provider, but **providers are
 interchangeable**. Swap `provider:` and the corresponding API key to use any
-supported provider.
+supported provider. {: .notice--info }
+
+**Note:** **Single-shot design.** Prompt2PR makes one LLM call per run — it
+cannot browse the internet, run tests, or iterate on its output. The examples
+below are designed with this in mind. {: .notice--info }
 
 ---
 
@@ -29,9 +33,8 @@ Workflows that improve code structure, safety, and standards compliance.
 [`examples/code-quality/enforce-style-guide.yml`](https://github.com/davd-gzl/Prompt2PR/blob/main/examples/code-quality/enforce-style-guide.yml)
 
 Checks source files against a style guide and fixes violations: consistent
-naming conventions (camelCase for variables, PascalCase for classes/types),
-missing JSDoc comments on exports, and magic numbers replaced with named
-constants.
+naming conventions (camelCase for variables, PascalCase for classes/types) and
+magic numbers replaced with named constants.
 
 **Trigger:** Push to main + manual dispatch
 
@@ -42,20 +45,22 @@ constants.
 
 Adds defensive code: try/catch blocks around async operations, input validation,
 and descriptive error messages with context about what failed and why. Preserves
-existing behavior.
+existing behavior. Note: the LLM cannot run the code, so review the changes to
+ensure error handling matches your project's conventions.
 
 **Trigger:** Manual dispatch
 
-### Deprecation Cleanup
+### Add JSDoc
 
 **File:**
-[`examples/code-quality/deprecation-cleanup.yml`](https://github.com/davd-gzl/Prompt2PR/blob/main/examples/code-quality/deprecation-cleanup.yml)
+[`examples/code-quality/add-jsdoc.yml`](https://github.com/davd-gzl/Prompt2PR/blob/main/examples/code-quality/add-jsdoc.yml)
 
-Finds deprecated API calls and legacy patterns, then replaces them with modern
-alternatives (e.g., `fs.promises` over callbacks, `URL` constructor over
-`url.parse`).
+Adds missing JSDoc documentation to exported functions, classes, and type
+aliases. The LLM reads the implementation and infers intent, parameters, return
+types, and edge cases from the code itself. One of the best single-shot LLM
+tasks — no external tools needed.
 
-**Trigger:** Monthly cron + manual dispatch
+**Trigger:** Manual dispatch
 
 ### Generate Tests
 
@@ -64,7 +69,8 @@ alternatives (e.g., `fs.promises` over callbacks, `URL` constructor over
 
 Analyzes source files alongside their test files to find untested exports.
 Generates new test cases following existing patterns in the project. Only
-creates tests — does not modify source files.
+creates tests — does not modify source files. Note: the LLM cannot execute
+tests, so generated tests should be reviewed and run before merging.
 
 **Trigger:** Weekly cron + manual dispatch
 
@@ -117,9 +123,11 @@ Workflows that handle routine cleanup and housekeeping.
 **File:**
 [`examples/maintenance/cleanup-todos.yml`](https://github.com/davd-gzl/Prompt2PR/blob/main/examples/maintenance/cleanup-todos.yml)
 
-Finds todo, FIXME, HACK, and XXX comments in source code. Determines whether
+Finds TODO, FIXME, HACK, and XXX comments in source code. Determines whether
 each one has been resolved by the surrounding code. Removes resolved comments
-and leaves unresolved ones in place.
+and leaves unresolved ones in place. Note: the LLM cannot check your issue
+tracker — if a TODO references an issue number, it judges from surrounding code
+only.
 
 **Trigger:** Weekly cron (Friday) + manual dispatch
 
@@ -138,7 +146,10 @@ information, and stack traces on errors. Does not change application logic.
 **File:**
 [`examples/maintenance/fix-dead-links.yml`](https://github.com/davd-gzl/Prompt2PR/blob/main/examples/maintenance/fix-dead-links.yml)
 
-Scans Markdown files for broken or dead links and fixes or removes them.
+Scans Markdown files for likely-broken links using pattern analysis: malformed
+URLs, known-dead domains, mismatched relative paths, and outdated references.
+The LLM cannot make HTTP requests to verify links, but it can catch many common
+issues from the URL patterns alone.
 
 **Trigger:** Weekly cron (Monday) + manual dispatch
 
@@ -238,4 +249,4 @@ Tips for writing effective prompts:
 
 ---
 
-Next: [Architecture]({% link architecture.md %})
+Next: [Architecture](/architecture/)

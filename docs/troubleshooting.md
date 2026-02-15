@@ -1,7 +1,7 @@
 ---
-layout: default
+layout: single
 title: Troubleshooting
-nav_order: 7
+permalink: /troubleshooting/
 ---
 
 # Troubleshooting
@@ -209,4 +209,4 @@ Check that GitHub Actions has permission to push branches.
 
 ---
 
-Next: [Contributing]({% link contributing.md %})
+Next: [Contributing](/contributing/)

@@ -1,28 +1,47 @@
 title: Prompt2PR
 description: >-
   A GitHub Action that turns prompts into Pull Requests using LLMs.
-remote_theme: just-the-docs/just-the-docs@v0.10.1
+remote_theme: 'mmistakes/minimal-mistakes@4.26.2'
 url: https://davd-gzl.github.io/Prompt2PR
 
-aux_links:
-  'GitHub':
-    - 'https://github.com/davd-gzl/Prompt2PR'
+minimal_mistakes_skin: 'default'
 
-nav_order_default: 0
+# Site author (shown in sidebar)
+author:
+  name: 'Prompt2PR'
+  bio: 'Turn prompts into Pull Requests using LLMs.'
+  links:
+    - label: 'GitHub'
+      icon: 'fab fa-fw fa-github'
+      url: 'https://github.com/davd-gzl/Prompt2PR'
 
-heading_anchors: true
+# Reading
+encoding: 'utf-8'
 
-search_enabled: true
+# Build
+markdown: kramdown
+highlighter: rouge
 
-back_to_top: true
-back_to_top_text: 'Back to top'
+# Plugins
+plugins:
+  - jekyll-include-cache
 
-color_scheme: light
+# Defaults — apply sidebar nav + layout to all pages
+defaults:
+  - scope:
+      path: ''
+      type: 'pages'
+    values:
+      layout: 'single'
+      sidebar:
+        nav: 'docs'
 
-footer_content: >-
-  Prompt2PR is released under the <a
-  href="https://github.com/davd-gzl/Prompt2PR/blob/main/LICENSE">MIT
-  License</a>.
+# Footer
+footer:
+  links:
+    - label: 'GitHub'
+      icon: 'fab fa-fw fa-github'
+      url: 'https://github.com/davd-gzl/Prompt2PR'
 
 # Exclude files that shouldn't be processed by Jekyll
 exclude:

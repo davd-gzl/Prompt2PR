@@ -1,7 +1,14 @@
 # Fix Dead Links — Prompt2PR Example Workflow
 #
-# Scans markdown files for broken links and fixes them automatically.
-# Runs weekly on Monday at 9:00 UTC and can be triggered manually.
+# Scans markdown files for broken or suspicious links and fixes them.
+# The LLM uses its training knowledge to identify URLs that are likely
+# broken — known-dead domains, obviously malformed URLs, outdated
+# versioned documentation paths, and relative links that don't match
+# files in the repository.
+#
+# Note: The LLM cannot make live HTTP requests to verify URLs at runtime.
+# It relies on pattern recognition and training knowledge. For thorough
+# link checking, pair this with a dedicated link-checker tool.
 #
 # Setup:
 #   1. Copy this file to .github/workflows/fix-dead-links.yml
@@ -34,10 +41,13 @@ jobs:
       - uses: davd-gzl/Prompt2PR@v1
         with:
           prompt: >-
-            ${{ github.event.inputs.prompt || 'Scan all markdown files for
-            broken or dead links (HTTP 404, 410, or unreachable URLs). For each
-            broken link, either update it to the correct URL or remove it with a
-            note. Do not change any other content.' }}
+            ${{ github.event.inputs.prompt || 'Scan all markdown files for links
+            that are likely broken: malformed URLs (missing protocol, typos in
+            domain names), links to known-dead domains or services, relative
+            links that do not match any file in the repository, and versioned
+            documentation URLs that appear outdated. For each issue, either
+            update the URL to the correct destination or remove the link with a
+            brief note explaining why. Do not change any other content.' }}
           provider: 'mistral'
           paths: '**/*.md'
           max_files: 10

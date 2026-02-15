@@ -22,13 +22,17 @@ Get a working Prompt2PR workflow in under 5 minutes:
 3. **Create a workflow file** at `.github/workflows/prompt2pr.yml`:
 
    ```yaml
-   name: Prompt2PR
+   name: Prompt2PR — Weekly Code Cleanup
    on:
+     schedule:
+       # Every Monday at 9:00 UTC
+       - cron: '0 9 * * 1'
      workflow_dispatch:
        inputs:
          prompt:
-           description: 'What should the AI fix?'
-           required: true
+           description: 'Custom prompt (optional — overrides default)'
+           required: false
+           default: ''
 
    permissions:
      contents: write
@@ -41,16 +45,25 @@ Get a working Prompt2PR workflow in under 5 minutes:
          - uses: actions/checkout@v4
          - uses: davd-gzl/Prompt2PR@v1
            with:
-             prompt: ${{ github.event.inputs.prompt }}
+             prompt: >-
+               ${{ github.event.inputs.prompt || 'Review the source code for
+               common issues: unused imports, inconsistent naming, missing error
+               handling on async calls, and console.log statements that should
+               use a proper logger. Fix any issues you find. Do not change
+               application logic.' }}
              provider: mistral
+             paths: 'src/**'
+             max_files: 10
+             max_changes: 200
+             label: 'prompt2pr,code-quality'
            env:
              MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
    ```
 
-4. **Trigger the workflow** from the _Actions_ tab → _Prompt2PR_ → _Run
-   workflow_, enter your prompt, and watch the PR appear. You can also run it on
-   push or on a [cron schedule](#scheduling--triggers).
+4. **Trigger the workflow** — it runs automatically every Monday, or you can
+   trigger it manually from the _Actions_ tab with an optional custom prompt.
+   See [Scheduling & Triggers](#scheduling--triggers) for more options.
 
 ---
 
@@ -231,16 +244,20 @@ your repository. See each category's readme for detailed descriptions.
 > you can swap `provider:` and the corresponding API key to use any supported
 > provider.
 
+> **Single-shot design.** Prompt2PR makes one LLM call per run — it cannot
+> browse the internet, run tests, or iterate on its output. The examples below
+> are designed with this in mind.
+
 ### Code Quality
 
 Improve code structure, safety, and standards compliance.
 
-| Workflow                                                                 | Description                                              | Trigger      |
-| ------------------------------------------------------------------------ | -------------------------------------------------------- | ------------ |
-| [enforce-style-guide.yml](examples/code-quality/enforce-style-guide.yml) | Fix naming conventions, add JSDoc, replace magic numbers | Push to main |
-| [add-error-handling.yml](examples/code-quality/add-error-handling.yml)   | Add try/catch blocks and input validation                | Manual       |
-| [deprecation-cleanup.yml](examples/code-quality/deprecation-cleanup.yml) | Replace deprecated APIs with modern alternatives         | Monthly cron |
-| [generate-tests.yml](examples/code-quality/generate-tests.yml)           | Generate unit tests for untested functions               | Weekly cron  |
+| Workflow                                                                 | Description                                      | Trigger      |
+| ------------------------------------------------------------------------ | ------------------------------------------------ | ------------ |
+| [enforce-style-guide.yml](examples/code-quality/enforce-style-guide.yml) | Fix naming conventions and replace magic numbers | Push to main |
+| [add-error-handling.yml](examples/code-quality/add-error-handling.yml)   | Add try/catch blocks and input validation        | Manual       |
+| [add-jsdoc.yml](examples/code-quality/add-jsdoc.yml)                     | Add missing JSDoc comments to exported functions | Manual       |
+| [generate-tests.yml](examples/code-quality/generate-tests.yml)           | Generate unit tests for untested functions       | Weekly cron  |
 
 ### Documentation
 
@@ -256,11 +273,11 @@ Keep your docs accurate and up to date.
 
 Handle routine cleanup and housekeeping.
 
-| Workflow                                                        | Description                                 | Trigger     |
-| --------------------------------------------------------------- | ------------------------------------------- | ----------- |
-| [cleanup-todos.yml](examples/maintenance/cleanup-todos.yml)     | Remove resolved TODO/FIXME/HACK comments    | Weekly cron |
-| [improve-logging.yml](examples/maintenance/improve-logging.yml) | Replace console.log with structured logging | Manual      |
-| [fix-dead-links.yml](examples/maintenance/fix-dead-links.yml)   | Find and fix broken links in Markdown files | Weekly cron |
+| Workflow                                                        | Description                                               | Trigger     |
+| --------------------------------------------------------------- | --------------------------------------------------------- | ----------- |
+| [cleanup-todos.yml](examples/maintenance/cleanup-todos.yml)     | Remove resolved TODO/FIXME/HACK comments                  | Weekly cron |
+| [improve-logging.yml](examples/maintenance/improve-logging.yml) | Replace console.log with structured logging               | Manual      |
+| [fix-dead-links.yml](examples/maintenance/fix-dead-links.yml)   | Find likely-broken links in Markdown via pattern analysis | Weekly cron |
 
 ### Automation
 
@@ -432,6 +449,21 @@ Guardrail violation: File "config/secrets.json" is outside the allowed paths sco
 
 This is a safety feature. If you need the LLM to modify those files, expand your
 `paths` input.
+
+---
+
+## Roadmap
+
+See the full [Roadmap](https://davd-gzl.github.io/Prompt2PR/roadmap/) for what's
+coming next, including:
+
+- **PR deduplication** and **auto-assign reviewers**
+- **LiteLLM proxy mode** for any provider
+- **Agentic mode** — multi-step LLM loops with tool use (read files, run tests,
+  explore codebase)
+- **Structured prompts DSL** — `task`, `scope`, `rules` for precision
+- **Community prompt templates** and a **prompt marketplace**
+- **Cross-repo dashboard** and **self-improving prompts**
 
 ---
 

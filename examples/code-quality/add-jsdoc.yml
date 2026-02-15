@@ -1,0 +1,51 @@
+# Add JSDoc Comments — Prompt2PR Example Workflow
+#
+# Adds missing JSDoc documentation to exported functions, classes, and
+# type aliases. This is one of the best single-shot LLM tasks because
+# the model can read the implementation and infer intent, parameters,
+# return types, and edge cases from the code itself.
+#
+# Setup:
+#   1. Copy this file to .github/workflows/add-jsdoc.yml
+#   2. No API key needed — uses the built-in GITHUB_TOKEN
+#   3. Adjust the paths to match your source directories
+
+name: Add JSDoc Comments
+
+on:
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: 'Custom prompt (optional — overrides default)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  pull-requests: write
+  models: read
+
+jobs:
+  add-jsdoc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: davd-gzl/Prompt2PR@v1
+        with:
+          prompt: >-
+            ${{ github.event.inputs.prompt || 'Add JSDoc comments to all
+            exported functions, classes, and type aliases that are missing
+            documentation. Each JSDoc should include: a one-line summary of what
+            the function does, @param tags with type and description for every
+            parameter, @returns tag describing the return value, and @throws tag
+            if the function can throw. Infer descriptions from the
+            implementation. Do not modify any code — only add comments.' }}
+          provider: 'github'
+          model: 'openai/gpt-4o'
+          paths: 'src/**'
+          max_files: 10
+          max_changes: 200
+          label: 'prompt2pr,documentation'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

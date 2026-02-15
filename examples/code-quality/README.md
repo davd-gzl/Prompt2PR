@@ -9,30 +9,32 @@ across the codebase without manual review overhead.
 ### enforce-style-guide.yml
 
 Checks source files against a style guide and fixes violations: consistent
-naming conventions (camelCase, PascalCase), missing JSDoc comments on exports,
-and magic numbers replaced with named constants.
+naming conventions (camelCase, PascalCase) and magic numbers replaced with named
+constants. Works well as a single-shot task because the rules are mechanical.
 
 **Trigger:** Push to main + manual dispatch
+
+### add-jsdoc.yml
+
+Adds missing JSDoc documentation to exported functions, classes, and type
+aliases. One of the best single-shot LLM tasks — the model reads the
+implementation and infers intent, parameters, return types, and edge cases.
+
+**Trigger:** Manual dispatch
 
 ### add-error-handling.yml
 
 Adds defensive code to source files: try/catch blocks around async operations,
 input validation, and descriptive error messages with context. Preserves
-existing behavior.
+existing behavior. Review the PR and run tests before merging.
 
 **Trigger:** Manual dispatch
-
-### deprecation-cleanup.yml
-
-Finds deprecated API calls and legacy patterns, then replaces them with modern
-alternatives (e.g., `fs.promises` over callbacks, `URL` constructor over
-`url.parse`).
-
-**Trigger:** Monthly cron + manual dispatch
 
 ### generate-tests.yml
 
 Analyzes source files alongside their test files to find untested exports.
-Generates new test cases following existing patterns in the project.
+Generates new test cases following existing patterns. The generated tests are a
+starting point — they may need adjustments for mocking or fixtures since the LLM
+cannot execute them.
 
 **Trigger:** Weekly cron + manual dispatch

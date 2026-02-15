@@ -1,7 +1,7 @@
 ---
-layout: default
+layout: single
 title: Configuration
-nav_order: 3
+permalink: /configuration/
 ---
 
 # Configuration Reference
@@ -95,8 +95,8 @@ paths: 'src/**,lib/**,*.md'
 paths: '**/*.{ts,tsx,js,jsx}'
 ```
 
-{: .note } The `.github/` directory is always excluded regardless of the `paths`
-setting. Binary files are also automatically skipped.
+**Note:** The `.github/` directory is always excluded regardless of the `paths`
+setting. Binary files are also automatically skipped. {: .notice--info }
 
 ### `max_files` (optional)
 
@@ -209,4 +209,4 @@ steps.
 
 ---
 
-Next: [Providers]({% link providers.md %})
+Next: [Providers](/providers/)

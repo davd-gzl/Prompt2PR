@@ -1,13 +1,14 @@
 # Enforce Style Guide — Prompt2PR Example Workflow
 #
 # Checks source files against a project style guide and fixes violations.
+# Works well as a single-shot task because naming and formatting rules are
+# mechanical — the LLM can apply them without needing to run the code.
 # Uses GitHub Models (no external API key needed).
-# Runs on every push to main and can be triggered manually.
 #
 # Setup:
 #   1. Copy this file to .github/workflows/enforce-style-guide.yml
 #   2. No API key needed — uses the built-in GITHUB_TOKEN
-#   3. Adjust the paths to match your source directories
+#   3. Adjust the paths and style rules in the prompt to match your project
 
 name: Enforce Style Guide
 
@@ -38,9 +39,9 @@ jobs:
           prompt: >-
             ${{ github.event.inputs.prompt || 'Review all source files for style
             guide violations: ensure consistent naming conventions (camelCase
-            for variables, PascalCase for classes/types), add missing JSDoc
-            comments to exported functions, and replace magic numbers with named
-            constants. Do not change any logic or behavior.' }}
+            for variables, PascalCase for classes/types), and replace magic
+            numbers with named constants. Do not change any logic or behavior.'
+            }}
           provider: 'github'
           model: 'openai/gpt-4o'
           paths: 'src/**'

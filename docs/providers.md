@@ -1,7 +1,7 @@
 ---
-layout: default
+layout: single
 title: Providers
-nav_order: 4
+permalink: /providers/
 ---
 
 # Providers
@@ -148,8 +148,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-{: .important } The `models: read` permission is required. Without it, the
-action will fail with an authentication error.
+**Important:** The `models: read` permission is required. Without it, the action
+will fail with an authentication error. {: .notice--warning }
 
 ---
 
@@ -191,4 +191,4 @@ servers.
 
 ---
 
-Next: [Examples]({% link examples.md %})
+Next: [Examples](/examples/)
