@@ -6,6 +6,13 @@ becomes a problem.
 
 ## Workflows
 
+### update-copyright.yml
+
+Updates copyright year references in source files and license files to the
+current year. Uses range format (e.g., `2024-2026`) where appropriate.
+
+**Trigger:** Yearly cron (January 2nd) + manual dispatch
+
 ### sync-readme.yml
 
 Compares the readme with actual source code to find outdated code examples, API
@@ -21,10 +28,3 @@ formatting, code blocks, links, and front matter. Creates translated files with
 a language suffix (e.g., `README.fr.md`).
 
 **Trigger:** Manual dispatch (specify target language in the prompt)
-
-### update-copyright.yml
-
-Updates copyright year references in source files and license files to the
-current year. Uses range format (e.g., `2024-2026`) where appropriate.
-
-**Trigger:** Yearly cron (January 2nd) + manual dispatch

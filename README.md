@@ -18,15 +18,15 @@ Get a working Prompt2PR workflow in under 5 minutes:
 1. **Get an API key** from your LLM provider (see
    [Provider Setup](#provider-setup) below).
 2. **Add the key as a GitHub Secret** in your repository under _Settings →
-   Secrets and variables → Actions_ (e.g., `MISTRAL_API_KEY`).
-3. **Create a workflow file** at `.github/workflows/prompt2pr.yml`:
+   Secrets and variables → Actions_ (e.g., `OPENAI_API_KEY`).
+3. **Create a workflow file** at `.github/workflows/sync-readme.yml`:
 
    ```yaml
-   name: Prompt2PR — Weekly Code Cleanup
+   name: Sync README
    on:
      schedule:
-       # Every Monday at 9:00 UTC
-       - cron: '0 9 * * 1'
+       # Every Wednesday at 8:00 UTC
+       - cron: '0 8 * * 3'
      workflow_dispatch:
        inputs:
          prompt:
@@ -39,29 +39,30 @@ Get a working Prompt2PR workflow in under 5 minutes:
      pull-requests: write
 
    jobs:
-     prompt2pr:
+     sync-readme:
        runs-on: ubuntu-latest
        steps:
          - uses: actions/checkout@v4
          - uses: davd-gzl/Prompt2PR@v1
            with:
              prompt: >-
-               ${{ github.event.inputs.prompt || 'Review the source code for
-               common issues: unused imports, inconsistent naming, missing error
-               handling on async calls, and console.log statements that should
-               use a proper logger. Fix any issues you find. Do not change
-               application logic.' }}
-             provider: mistral
-             paths: 'src/**'
-             max_files: 10
+               ${{ github.event.inputs.prompt || 'Compare the README.md with the
+               actual source code. Find any code examples, API references, or
+               configuration options in the README that are outdated or do not
+               match the current implementation. Update the README to accurately
+               reflect the code. Do not change source files — only update
+               README.md.' }}
+             provider: openai
+             paths: 'src/**,README.md'
+             max_files: 1
              max_changes: 200
-             label: 'prompt2pr,code-quality'
+             label: 'prompt2pr,documentation'
            env:
-             MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+             OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
    ```
 
-4. **Trigger the workflow** — it runs automatically every Monday, or you can
+4. **Trigger the workflow** — it runs automatically every Wednesday, or you can
    trigger it manually from the _Actions_ tab with an optional custom prompt.
    See [Scheduling & Triggers](#scheduling--triggers) for more options.
 
@@ -249,36 +250,26 @@ your repository. See each category's readme for detailed descriptions.
 > provider (some models can browse the web, others cannot). The examples below
 > are designed with this in mind.
 
-### Code Quality
-
-Improve code structure, safety, and standards compliance.
-
-| Workflow                                                                 | Description                                      | Trigger      |
-| ------------------------------------------------------------------------ | ------------------------------------------------ | ------------ |
-| [enforce-style-guide.yml](examples/code-quality/enforce-style-guide.yml) | Fix naming conventions and replace magic numbers | Push to main |
-| [add-error-handling.yml](examples/code-quality/add-error-handling.yml)   | Add try/catch blocks and input validation        | Manual       |
-| [add-jsdoc.yml](examples/code-quality/add-jsdoc.yml)                     | Add missing JSDoc comments to exported functions | Manual       |
-| [generate-tests.yml](examples/code-quality/generate-tests.yml)           | Generate unit tests for untested functions       | Weekly cron  |
-
 ### Documentation
 
 Keep your docs accurate and up to date.
 
 | Workflow                                                            | Description                                   | Trigger     |
 | ------------------------------------------------------------------- | --------------------------------------------- | ----------- |
+| [update-copyright.yml](examples/documentation/update-copyright.yml) | Update copyright year across all files        | Yearly cron |
 | [sync-readme.yml](examples/documentation/sync-readme.yml)           | Keep readme in sync with actual source code   | Weekly cron |
 | [translate-docs.yml](examples/documentation/translate-docs.yml)     | Translate Markdown docs into another language | Manual      |
-| [update-copyright.yml](examples/documentation/update-copyright.yml) | Update copyright year across all files        | Yearly cron |
 
-### Maintenance
+### Code Quality
 
-Handle routine cleanup and housekeeping.
+Improve code structure, safety, and standards compliance.
 
-| Workflow                                                        | Description                                 | Trigger     |
-| --------------------------------------------------------------- | ------------------------------------------- | ----------- |
-| [cleanup-todos.yml](examples/maintenance/cleanup-todos.yml)     | Remove resolved TODO/FIXME/HACK comments    | Weekly cron |
-| [improve-logging.yml](examples/maintenance/improve-logging.yml) | Replace console.log with structured logging | Manual      |
-| [fix-dead-links.yml](examples/maintenance/fix-dead-links.yml)   | Fix broken or dead links in Markdown files  | Weekly cron |
+| Workflow                                                                 | Description                                      | Trigger      |
+| ------------------------------------------------------------------------ | ------------------------------------------------ | ------------ |
+| [add-jsdoc.yml](examples/code-quality/add-jsdoc.yml)                     | Add missing JSDoc comments to exported functions | Manual       |
+| [enforce-style-guide.yml](examples/code-quality/enforce-style-guide.yml) | Fix naming conventions and replace magic numbers | Push to main |
+| [add-error-handling.yml](examples/code-quality/add-error-handling.yml)   | Add try/catch blocks and input validation        | Manual       |
+| [generate-tests.yml](examples/code-quality/generate-tests.yml)           | Generate unit tests for untested functions       | Weekly cron  |
 
 ### Automation
 
@@ -286,9 +277,19 @@ Event-driven workflows and change previews.
 
 | Workflow                                                               | Description                                             | Trigger       |
 | ---------------------------------------------------------------------- | ------------------------------------------------------- | ------------- |
-| [on-issue-comment.yml](examples/automation/on-issue-comment.yml)       | Trigger via `/prompt2pr` comment on issues              | Issue comment |
-| [dry-run-audit.yml](examples/automation/dry-run-audit.yml)             | Preview changes without creating a PR (`dry_run: true`) | Manual        |
 | [accessibility-audit.yml](examples/automation/accessibility-audit.yml) | Audit frontend files for a11y issues                    | Weekly cron   |
+| [dry-run-audit.yml](examples/automation/dry-run-audit.yml)             | Preview changes without creating a PR (`dry_run: true`) | Manual        |
+| [on-issue-comment.yml](examples/automation/on-issue-comment.yml)       | Trigger via `/prompt2pr` comment on issues              | Issue comment |
+
+### Maintenance
+
+Handle routine cleanup and housekeeping.
+
+| Workflow                                                        | Description                                 | Trigger     |
+| --------------------------------------------------------------- | ------------------------------------------- | ----------- |
+| [improve-logging.yml](examples/maintenance/improve-logging.yml) | Replace console.log with structured logging | Manual      |
+| [cleanup-todos.yml](examples/maintenance/cleanup-todos.yml)     | Remove resolved TODO/FIXME/HACK comments    | Weekly cron |
+| [fix-dead-links.yml](examples/maintenance/fix-dead-links.yml)   | Fix broken or dead links in Markdown files  | Weekly cron |
 
 ---
 

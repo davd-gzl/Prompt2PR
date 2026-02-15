@@ -5,14 +5,6 @@ schedule to keep your codebase tidy without manual intervention.
 
 ## Workflows
 
-### cleanup-todos.yml
-
-Finds todo, FIXME, HACK, and XXX comments in source code. Reads the surrounding
-code to judge whether each one has been addressed. Removes resolved comments and
-leaves unresolved ones in place. Note: the LLM cannot check your issue tracker.
-
-**Trigger:** Weekly cron (Friday) + manual dispatch
-
 ### improve-logging.yml
 
 Replaces `console.log` with structured logging: appropriate log levels (debug,
@@ -20,6 +12,14 @@ info, warn, error), contextual information (function name, IDs), and stack
 traces on errors. Does not change application logic.
 
 **Trigger:** Manual dispatch
+
+### cleanup-todos.yml
+
+Finds todo, FIXME, HACK, and XXX comments in source code. Reads the surrounding
+code to judge whether each one has been addressed. Removes resolved comments and
+leaves unresolved ones in place. Note: the LLM cannot check your issue tracker.
+
+**Trigger:** Weekly cron (Friday) + manual dispatch
 
 ### fix-dead-links.yml
 

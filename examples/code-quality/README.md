@@ -6,14 +6,6 @@ across the codebase without manual review overhead.
 
 ## Workflows
 
-### enforce-style-guide.yml
-
-Checks source files against a style guide and fixes violations: consistent
-naming conventions (camelCase, PascalCase) and magic numbers replaced with named
-constants. Works well as a single-shot task because the rules are mechanical.
-
-**Trigger:** Push to main + manual dispatch
-
 ### add-jsdoc.yml
 
 Adds missing JSDoc documentation to exported functions, classes, and type
@@ -21,6 +13,14 @@ aliases. One of the best single-shot LLM tasks — the model reads the
 implementation and infers intent, parameters, return types, and edge cases.
 
 **Trigger:** Manual dispatch
+
+### enforce-style-guide.yml
+
+Checks source files against a style guide and fixes violations: consistent
+naming conventions (camelCase, PascalCase) and magic numbers replaced with named
+constants. Works well as a single-shot task because the rules are mechanical.
+
+**Trigger:** Push to main + manual dispatch
 
 ### add-error-handling.yml
 
