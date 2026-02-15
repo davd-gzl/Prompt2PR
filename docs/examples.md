@@ -18,8 +18,9 @@ interchangeable**. Swap `provider:` and the corresponding API key to use any
 supported provider. {: .notice--info }
 
 **Note:** **Single-shot design.** Prompt2PR makes one LLM call per run — it
-cannot browse the internet, run tests, or iterate on its output. The examples
-below are designed with this in mind. {: .notice--info }
+cannot run tests or iterate on its output. Internet access depends on the model
+and provider (some models can browse the web, others cannot). The examples below
+are designed with this in mind. {: .notice--info }
 
 ---
 
@@ -146,10 +147,10 @@ information, and stack traces on errors. Does not change application logic.
 **File:**
 [`examples/maintenance/fix-dead-links.yml`](https://github.com/davd-gzl/Prompt2PR/blob/main/examples/maintenance/fix-dead-links.yml)
 
-Scans Markdown files for likely-broken links using pattern analysis: malformed
-URLs, known-dead domains, mismatched relative paths, and outdated references.
-The LLM cannot make HTTP requests to verify links, but it can catch many common
-issues from the URL patterns alone.
+Scans Markdown files for broken or dead links (HTTP 404, 410, or unreachable
+URLs) and either updates them to the correct destination or removes them with a
+note. Internet access depends on the model — some can verify URLs live, others
+rely on pattern recognition and training knowledge.
 
 **Trigger:** Weekly cron (Monday) + manual dispatch
 

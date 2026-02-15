@@ -244,8 +244,9 @@ your repository. See each category's readme for detailed descriptions.
 > you can swap `provider:` and the corresponding API key to use any supported
 > provider.
 >
-> **Single-shot design.** Prompt2PR makes one LLM call per run — it cannot
-> browse the internet, run tests, or iterate on its output. The examples below
+> **Single-shot design.** Prompt2PR makes one LLM call per run — it cannot run
+> tests or iterate on its output. Internet access depends on the model and
+> provider (some models can browse the web, others cannot). The examples below
 > are designed with this in mind.
 
 ### Code Quality
@@ -273,11 +274,11 @@ Keep your docs accurate and up to date.
 
 Handle routine cleanup and housekeeping.
 
-| Workflow                                                        | Description                                               | Trigger     |
-| --------------------------------------------------------------- | --------------------------------------------------------- | ----------- |
-| [cleanup-todos.yml](examples/maintenance/cleanup-todos.yml)     | Remove resolved TODO/FIXME/HACK comments                  | Weekly cron |
-| [improve-logging.yml](examples/maintenance/improve-logging.yml) | Replace console.log with structured logging               | Manual      |
-| [fix-dead-links.yml](examples/maintenance/fix-dead-links.yml)   | Find likely-broken links in Markdown via pattern analysis | Weekly cron |
+| Workflow                                                        | Description                                 | Trigger     |
+| --------------------------------------------------------------- | ------------------------------------------- | ----------- |
+| [cleanup-todos.yml](examples/maintenance/cleanup-todos.yml)     | Remove resolved TODO/FIXME/HACK comments    | Weekly cron |
+| [improve-logging.yml](examples/maintenance/improve-logging.yml) | Replace console.log with structured logging | Manual      |
+| [fix-dead-links.yml](examples/maintenance/fix-dead-links.yml)   | Fix broken or dead links in Markdown files  | Weekly cron |
 
 ### Automation
 

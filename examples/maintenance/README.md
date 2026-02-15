@@ -23,9 +23,9 @@ traces on errors. Does not change application logic.
 
 ### fix-dead-links.yml
 
-Scans Markdown files for links that are likely broken: malformed URLs,
-known-dead domains, relative links that don't match repository files, and
-outdated versioned documentation URLs. Note: the LLM cannot make live HTTP
-requests — it relies on pattern recognition and training knowledge.
+Scans Markdown files for broken or dead links (HTTP 404, 410, or unreachable
+URLs). For each broken link, either updates it to the correct URL or removes it
+with a note. Internet access depends on the model — some can verify URLs live,
+others rely on pattern recognition and training knowledge.
 
 **Trigger:** Weekly cron (Monday) + manual dispatch

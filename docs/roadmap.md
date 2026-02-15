@@ -10,7 +10,8 @@ Where Prompt2PR is headed. This roadmap reflects the original product vision and
 community feedback. Items are grouped by phase — not by timeline.
 
 **Current state:** Prompt2PR v1 is a single-shot action. One LLM call, one
-response, one PR. No iteration, no tool use, no internet access.
+response, one PR. No iteration, no tool use. Internet access depends on the
+model and provider.
 
 ---
 
@@ -102,18 +103,16 @@ about files it was given upfront. It cannot:
 
 - Explore the codebase to find related files
 - Run tests to verify its changes work
-- Check if a URL is actually reachable
 - Iterate on its output based on feedback
 
 An agentic mode would unlock tasks that are currently impossible:
 
-| Task                            | Single-shot            | Agentic              |
-| ------------------------------- | ---------------------- | -------------------- |
-| Add JSDoc to visible files      | Works well             | Works well           |
-| Fix a bug described in an issue | Limited                | Can explore codebase |
-| Refactor across many files      | Limited by context     | Can navigate freely  |
-| Fix failing tests               | Cannot run tests       | Can run and iterate  |
-| Verify link liveness            | Cannot make HTTP calls | Can check URLs       |
+| Task                            | Single-shot        | Agentic              |
+| ------------------------------- | ------------------ | -------------------- |
+| Add JSDoc to visible files      | Works well         | Works well           |
+| Fix a bug described in an issue | Limited            | Can explore codebase |
+| Refactor across many files      | Limited by context | Can navigate freely  |
+| Fix failing tests               | Cannot run tests   | Can run and iterate  |
 
 ### What the API Could Look Like
 
