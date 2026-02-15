@@ -1,7 +1,5 @@
 name: Prompt2PR
-description: >-
-  A GitHub Action that turns plain-English prompts into Pull Requests using
-  LLMs. Point it at files, describe what to fix, and get an automated PR.
+description: Turn prompts into Pull Requests using LLMs.
 author: davd-gzl
 branding:
   icon: git-pull-request
