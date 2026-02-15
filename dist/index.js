@@ -30916,14 +30916,20 @@ class ConfigError extends Error {
 /**
  * Thrown when an LLM provider API call fails.
  * Includes the provider name and optional HTTP status code for diagnostics.
+ *
+ * When `retryable` is `false`, the retry utility should **not** attempt
+ * to re-execute the request (e.g., HTTP 429 rate limits that won't
+ * resolve within a reasonable backoff window).
  */
 class ProviderError extends Error {
     provider;
     statusCode;
-    constructor(message, provider, statusCode) {
+    retryable;
+    constructor(message, provider, statusCode, retryable = true) {
         super(message);
         this.provider = provider;
         this.statusCode = statusCode;
+        this.retryable = retryable;
         this.name = 'ProviderError';
     }
 }
@@ -40599,7 +40605,8 @@ class AnthropicProvider {
             if (response.status === 429) {
                 const retryAfter = response.headers.get('retry-after');
                 const retryInfo = retryAfter ? ` (retry after ${retryAfter}s)` : '';
-                throw new ProviderError(`${message}${retryInfo}`, this.name, response.status);
+                throw new ProviderError(`${message}${retryInfo}`, this.name, response.status, false // 429 is not retryable — rate limits won't resolve in seconds
+                );
             }
             throw new ProviderError(message, this.name, response.status);
         }
@@ -40800,7 +40807,8 @@ class BaseOpenAICompatibleProvider {
             if (response.status === 429) {
                 const retryAfter = response.headers.get('retry-after');
                 const retryInfo = retryAfter ? ` (retry after ${retryAfter}s)` : '';
-                throw new ProviderError(`${message}${retryInfo}`, this.name, response.status);
+                throw new ProviderError(`${message}${retryInfo}`, this.name, response.status, false // 429 is not retryable — rate limits won't resolve in seconds
+                );
             }
             throw new ProviderError(message, this.name, response.status);
         }
@@ -41162,6 +41170,9 @@ function parseResponse(response) {
  * Wraps any async operation with configurable retry count and backoff.
  * Used primarily for LLM provider API calls (NFR14: retry once, 5s backoff).
  *
+ * Errors that are explicitly marked as non-retryable (e.g., HTTP 429 rate
+ * limits) are re-thrown immediately without consuming retry attempts.
+ *
  * @see _bmad-output/planning-artifacts/architecture.md#Decision 4
  */
 // ---------------------------------------------------------------------------
@@ -41211,6 +41222,11 @@ async function withRetry(fn, options = {}) {
         }
         catch (error) {
             lastError = error;
+            // Non-retryable errors (e.g., 429 rate limits) are re-thrown
+            // immediately — retrying would just waste another request.
+            if (error instanceof ProviderError && !error.retryable) {
+                throw error;
+            }
             // If we have retries remaining, wait and try again
             if (attempt < retries) {
                 await sleep(backoffMs);
