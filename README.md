@@ -241,8 +241,8 @@ Ready-to-use workflow files organized by use case in the
 your repository. See each category's readme for detailed descriptions.
 
 > **Providers are interchangeable.** Each example uses a specific provider, but
-> you can swap `provider:` and the corresponding API key to use any supported
-> provider.
+you can swap `provider:` and the corresponding API key to use any supported
+provider.
 >
 > **Single-shot design.** Prompt2PR makes one LLM call per run — it cannot
 > browse the internet, run tests, or iterate on its output. The examples below
@@ -515,3 +515,11 @@ referencing `@v1`.
 ## License
 
 [MIT](LICENSE)
+
+---
+
+## Related Links
+
+- [Education Quiz](https://education.openguessr.com/quiz) - Explore geography knowledge through interactive quizzes.
+
+--- END FILE ---
