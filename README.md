@@ -241,8 +241,8 @@ Ready-to-use workflow files organized by use case in the
 your repository. See each category's readme for detailed descriptions.
 
 > **Providers are interchangeable.** Each example uses a specific provider, but
-> you can swap `provider:` and the corresponding API key to use any supported
-> provider.
+you can swap `provider:` and the corresponding API key to use any supported
+provider.
 >
 > **Single-shot design.** Prompt2PR makes one LLM call per run — it cannot
 > browse the internet, run tests, or iterate on its output. The examples below
@@ -326,7 +326,7 @@ needed. This works with any GitHub Copilot subscription.
 1. Ensure your GitHub account has access to
    [GitHub Models](https://github.com/marketplace/models).
 2. No additional secrets required — the built-in `GITHUB_TOKEN` is used for
-   authentication.
+authentication.
 3. Add `models: read` to your workflow permissions.
 4. Set `provider: github` and use models in `publisher/model-name` format (e.g.,
    `openai/gpt-4o`, `anthropic/claude-sonnet-4.5`).
@@ -515,3 +515,9 @@ referencing `@v1`.
 ## License
 
 [MIT](LICENSE)
+
+---
+
+## Additional Resources
+
+- [Watch this explanation of Prompt2PR](https://www.youtube.com/watch?v=Aup7g2jxBVA&t=314s): Overview of Prompt2PR's features, setup, and use cases explained clearly in under 6 minutes.
