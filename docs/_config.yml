@@ -17,7 +17,7 @@ search_enabled: true
 back_to_top: true
 back_to_top_text: 'Back to top'
 
-color_scheme: dark
+color_scheme: light
 
 footer_content: >-
   Prompt2PR is released under the <a
