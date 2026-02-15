@@ -5,7 +5,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 > A GitHub Action that turns prompts into Pull Requests using LLMs. Point it at
-> files, describe what to fix, and get an automated PR.
+> files, describe what to change, and get an automated PR — on push, on
+> schedule, or on demand.
 
 /!\ This is an early production, please report issues (code, bug,
 vulnerabilities) when you spot one
