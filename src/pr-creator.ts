@@ -81,9 +81,33 @@ function sanitizeSummary(raw: string): string {
 }
 
 /**
- * Build the PR title with the [Prompt2PR] prefix and a summary.
+ * Sanitize a string for safe use in a GitHub PR title.
+ *
+ * Applies the same safety transforms as `sanitizeSummary` (HTML stripping,
+ * @mention escaping, issue-ref escaping) to prevent injection via the title.
  */
-function buildTitle(changes: FileChange[]): string {
+function sanitizeForTitle(raw: string): string {
+  return (
+    raw
+      // Strip HTML tags
+      .replace(/<[^>]*>/g, '')
+      // Escape @mentions
+      .replace(/@([a-zA-Z0-9_-])/g, '@\u200B$1')
+      // Escape issue/PR references
+      .replace(/#(\d)/g, '#\u200B$1')
+  )
+}
+
+/**
+ * Maximum length for the PR title (GitHub truncates at 256).
+ * We cap slightly below to leave room for the prefix.
+ */
+const MAX_TITLE_LENGTH = 200
+
+/**
+ * Build a fallback title from file change statistics.
+ */
+function buildFallbackTitle(changes: FileChange[]): string {
   const count = changes.length
   const actions = changes.map((c) => c.action)
   const modified = actions.filter((a) => a === 'modify').length
@@ -96,6 +120,37 @@ function buildTitle(changes: FileChange[]): string {
   if (deleted > 0) parts.push(`${deleted} deleted`)
 
   return `[Prompt2PR] Update ${count} file(s): ${parts.join(', ')}`
+}
+
+/**
+ * Build the PR title.
+ *
+ * When an AI summary is available, the first sentence (or first line) is used
+ * as a descriptive title. Falls back to file-change statistics when no summary
+ * is provided.
+ */
+function buildTitle(changes: FileChange[], summary?: string): string {
+  if (!summary || summary.trim().length === 0) {
+    return buildFallbackTitle(changes)
+  }
+
+  // Sanitize and extract first meaningful sentence from the summary
+  const cleaned = sanitizeForTitle(summary)
+    .replace(/\n+/g, ' ') // collapse newlines
+    .trim()
+
+  // Take the first sentence (up to first period, exclamation, or question mark followed by space)
+  const sentenceMatch = cleaned.match(/^(.+?[.!?])(?:\s|$)/)
+  const firstSentence = sentenceMatch ? sentenceMatch[1] : cleaned
+
+  // Truncate if needed
+  const maxContentLength = MAX_TITLE_LENGTH - '[Prompt2PR] '.length
+  const truncated =
+    firstSentence.length > maxContentLength
+      ? firstSentence.slice(0, maxContentLength - 3) + '...'
+      : firstSentence
+
+  return `[Prompt2PR] ${truncated}`
 }
 
 /**
@@ -175,7 +230,7 @@ export async function createPullRequest(
         | undefined
     )?.default_branch ?? 'main'
 
-  const title = buildTitle(changes)
+  const title = buildTitle(changes, summary)
   const body = buildBody(config.prompt, changes, metadata, summary)
 
   log.info(`Creating PR: "${title}" (${branchName} → ${defaultBranch})`)

@@ -198,7 +198,7 @@ describe('pr-creator.ts — createPullRequest()', () => {
     ).rejects.toThrow(GitError)
   })
 
-  it('includes file action summary in PR title', async () => {
+  it('includes file action summary in PR title when no AI summary provided', async () => {
     mockCreate.mockResolvedValueOnce({
       data: { number: 1, html_url: 'https://example.com/pr/1' }
     })
@@ -218,6 +218,146 @@ describe('pr-creator.ts — createPullRequest()', () => {
     expect(title).toContain('2 file(s)')
     expect(title).toContain('1 modified')
     expect(title).toContain('1 created')
+  })
+
+  it('uses AI summary as descriptive PR title when summary is provided', async () => {
+    mockCreate.mockResolvedValueOnce({
+      data: { number: 1, html_url: 'https://example.com/pr/1' }
+    })
+    mockAddLabels.mockResolvedValueOnce(undefined)
+
+    await createPullRequest(
+      SAMPLE_CHANGES,
+      'branch',
+      makeConfig(),
+      SAMPLE_METADATA,
+      'token',
+      'Fixed broken links in documentation files and updated references.'
+    )
+
+    const title = (mockCreate.mock.calls[0][0] as Record<string, unknown>)
+      .title as string
+    expect(title).toContain('[Prompt2PR]')
+    expect(title).toContain(
+      'Fixed broken links in documentation files and updated references.'
+    )
+    expect(title).not.toContain('file(s)')
+  })
+
+  it('falls back to file stats title when summary is empty string', async () => {
+    mockCreate.mockResolvedValueOnce({
+      data: { number: 1, html_url: 'https://example.com/pr/1' }
+    })
+    mockAddLabels.mockResolvedValueOnce(undefined)
+
+    await createPullRequest(
+      SAMPLE_CHANGES,
+      'branch',
+      makeConfig(),
+      SAMPLE_METADATA,
+      'token',
+      ''
+    )
+
+    const title = (mockCreate.mock.calls[0][0] as Record<string, unknown>)
+      .title as string
+    expect(title).toContain('[Prompt2PR]')
+    expect(title).toContain('2 file(s)')
+  })
+
+  it('truncates long AI summary in PR title with ellipsis', async () => {
+    mockCreate.mockResolvedValueOnce({
+      data: { number: 1, html_url: 'https://example.com/pr/1' }
+    })
+    mockAddLabels.mockResolvedValueOnce(undefined)
+
+    // Create a summary with a very long first sentence (over 200 chars)
+    const longSummary = 'A'.repeat(250) + '.'
+
+    await createPullRequest(
+      SAMPLE_CHANGES,
+      'branch',
+      makeConfig(),
+      SAMPLE_METADATA,
+      'token',
+      longSummary
+    )
+
+    const title = (mockCreate.mock.calls[0][0] as Record<string, unknown>)
+      .title as string
+    expect(title).toContain('[Prompt2PR]')
+    expect(title.length).toBeLessThanOrEqual(200)
+    expect(title).toContain('...')
+  })
+
+  it('falls back to file stats title when summary is whitespace only', async () => {
+    mockCreate.mockResolvedValueOnce({
+      data: { number: 1, html_url: 'https://example.com/pr/1' }
+    })
+    mockAddLabels.mockResolvedValueOnce(undefined)
+
+    await createPullRequest(
+      SAMPLE_CHANGES,
+      'branch',
+      makeConfig(),
+      SAMPLE_METADATA,
+      'token',
+      '   \n\t  '
+    )
+
+    const title = (mockCreate.mock.calls[0][0] as Record<string, unknown>)
+      .title as string
+    expect(title).toContain('[Prompt2PR]')
+    expect(title).toContain('2 file(s)')
+  })
+
+  it('strips HTML tags from AI summary used in PR title', async () => {
+    mockCreate.mockResolvedValueOnce({
+      data: { number: 1, html_url: 'https://example.com/pr/1' }
+    })
+    mockAddLabels.mockResolvedValueOnce(undefined)
+
+    await createPullRequest(
+      SAMPLE_CHANGES,
+      'branch',
+      makeConfig(),
+      SAMPLE_METADATA,
+      'token',
+      '<b>Fixed</b> the auth <em>bug</em>.'
+    )
+
+    const title = (mockCreate.mock.calls[0][0] as Record<string, unknown>)
+      .title as string
+    expect(title).toContain('[Prompt2PR]')
+    expect(title).toContain('Fixed the auth bug.')
+    expect(title).not.toContain('<b>')
+    expect(title).not.toContain('<em>')
+  })
+
+  it('escapes @mentions and #issue references in PR title', async () => {
+    mockCreate.mockResolvedValueOnce({
+      data: { number: 1, html_url: 'https://example.com/pr/1' }
+    })
+    mockAddLabels.mockResolvedValueOnce(undefined)
+
+    await createPullRequest(
+      SAMPLE_CHANGES,
+      'branch',
+      makeConfig(),
+      SAMPLE_METADATA,
+      'token',
+      'Fixed bug reported by @admin in #42.'
+    )
+
+    const title = (mockCreate.mock.calls[0][0] as Record<string, unknown>)
+      .title as string
+    expect(title).toContain('[Prompt2PR]')
+    // @mention should be broken with zero-width space
+    expect(title).not.toContain('@admin')
+    expect(title).toContain('@\u200Badmin')
+    // Issue ref should be broken with zero-width space
+    expect(title).not.toContain('#42')
+    expect(title).toContain('#\u200B42')
   })
 
   it('skips label application when no labels configured', async () => {
