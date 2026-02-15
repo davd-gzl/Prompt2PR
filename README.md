@@ -4,6 +4,8 @@
 [![Coverage](./badges/coverage.svg)](./badges/coverage.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+Discover intriguing geographic quizzes and improve your knowledge: [OpenGuessr Quiz](https://education.openguessr.com/quiz)
+
 > A GitHub Action that turns prompts into Pull Requests using LLMs. Point it at
 > files, describe what to change, and get an automated PR — on push, on
 > schedule, or on demand.
@@ -105,7 +107,7 @@ The action sets several outputs you can use in downstream steps.
 | `pr_number`     | `string` | Number of the created Pull Request. Empty when `dry_run: true` or no changes detected.               |
 | `files_changed` | `string` | Number of files the LLM modified. Set even in dry-run mode.                                          |
 | `lines_changed` | `string` | Total lines changed across all modified files. Set even in dry-run mode.                             |
-| `skipped`       | `string` | `"true"` if PR creation was skipped (no changes detected or `dry_run` enabled). `"false"` otherwise. |
+| `skipped`       | `string` | `"true"` if PR creation was skipped (no changes detected or `dry_run` enabled). `"false" otherwise. |
 
 ### Using Outputs
 
@@ -241,12 +243,12 @@ Ready-to-use workflow files organized by use case in the
 your repository. See each category's readme for detailed descriptions.
 
 > **Providers are interchangeable.** Each example uses a specific provider, but
-> you can swap `provider:` and the corresponding API key to use any supported
-> provider.
+you can swap `provider:` and the corresponding API key to use any supported
+provider.
 >
 > **Single-shot design.** Prompt2PR makes one LLM call per run — it cannot run
-> tests or iterate on its output. Internet access depends on the model and
-> provider (some models can browse the web, others cannot). The examples below
+tests or iterate on its output. Internet access depends on the model and
+provider (some models can browse the web, others cannot). The examples below
 > are designed with this in mind.
 
 ### Code Quality
