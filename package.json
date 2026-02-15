@@ -1,6 +1,6 @@
 {
   "name": "prompt2pr",
-  "description": "A GitHub Action that turns plain-English prompts into Pull Requests using LLMs",
+  "description": "A GitHub Action that turns prompts into Pull Requests using LLMs",
   "version": "1.0.0",
   "author": "davd-gzl",
   "type": "module",

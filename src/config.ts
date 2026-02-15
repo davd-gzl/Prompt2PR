@@ -35,7 +35,7 @@ export type ProviderName = (typeof VALID_PROVIDERS)[number]
  * Returned by `validateConfig()` and passed to all downstream modules.
  */
 export interface ActionConfig {
-  /** The plain-English prompt describing what changes to make. */
+  /** The prompt describing what changes to make. */
   prompt: string
   /** The LLM provider to use. */
   provider: ProviderName
@@ -223,7 +223,7 @@ export function validateConfig(): ActionConfig {
   const prompt = core.getInput('prompt', { required: true })
   if (!prompt) {
     throw new ConfigError(
-      "Missing required input: 'prompt'. Provide a plain-English prompt describing what changes to make."
+      "Missing required input: 'prompt'. Provide a prompt describing what changes to make."
     )
   }
 

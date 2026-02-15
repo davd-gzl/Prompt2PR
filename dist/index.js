@@ -31102,7 +31102,7 @@ function validateConfig() {
     // --- Required inputs ---
     const prompt = coreExports.getInput('prompt', { required: true });
     if (!prompt) {
-        throw new ConfigError("Missing required input: 'prompt'. Provide a plain-English prompt describing what changes to make.");
+        throw new ConfigError("Missing required input: 'prompt'. Provide a prompt describing what changes to make.");
     }
     const providerRaw = coreExports.getInput('provider', { required: true });
     if (!providerRaw) {
@@ -40304,7 +40304,7 @@ async function createPullRequest(changes, branchName, config, metadata, token, s
 /**
  * Prompt assembler for Prompt2PR.
  *
- * Combines the user's plain-English prompt with scanned file contents
+ * Combines the user's prompt with scanned file contents
  * into a structured `ChatRequest` ready for an LLM provider. Manages
  * context window limits by tracking character count and truncating
  * files that would exceed the budget (FR2, FR16).
@@ -40370,7 +40370,7 @@ function formatFileBlock(file) {
  * Files that would exceed the budget are truncated or excluded entirely,
  * with a logged warning.
  *
- * @param userPrompt - The plain-English prompt from the user (FR1).
+ * @param userPrompt - The prompt from the user (FR1).
  * @param files - Scanned file contexts from `scanFiles()`.
  * @param model - The model identifier to set on the request (may be empty).
  * @param maxContextChars - Maximum total characters for the assembled content.

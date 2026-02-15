@@ -1,6 +1,6 @@
 name: Prompt2PR
 description:
-  Turn prompts into Pull Requests with LLMs - on push, on schedule, or on
+  Turn prompts into Pull Requests using LLMs - on push, on schedule, or on
   demand.
 author: davd-gzl
 branding:
@@ -10,8 +10,8 @@ branding:
 inputs:
   prompt:
     description: >-
-      The plain-English prompt describing what changes to make. This is sent to
-      the LLM along with the scoped file contents as context.
+      The prompt describing what changes to make. This is sent to the LLM along
+      with the scoped file contents as context.
     required: true
 
   provider:

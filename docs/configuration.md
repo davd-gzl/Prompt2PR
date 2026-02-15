@@ -16,8 +16,8 @@ Inputs are configured via the `with:` block in your workflow step.
 
 ### `prompt` (required)
 
-The plain-English instruction describing what changes to make. This is sent to
-the LLM along with the contents of matching files.
+The instruction describing what changes to make. This is sent to the LLM along
+with the contents of matching files.
 
 ```yaml
 with:

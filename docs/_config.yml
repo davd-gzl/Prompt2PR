@@ -1,7 +1,6 @@
 title: Prompt2PR
 description: >-
-  A GitHub Action that turns plain-English prompts into Pull Requests using
-  LLMs.
+  A GitHub Action that turns prompts into Pull Requests using LLMs.
 remote_theme: just-the-docs/just-the-docs@v0.10.1
 url: https://davd-gzl.github.io/Prompt2PR
 

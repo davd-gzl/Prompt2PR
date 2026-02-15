@@ -7,8 +7,8 @@ permalink: /
 
 # Prompt2PR
 
-A GitHub Action that turns plain-English prompts into Pull Requests using LLMs.
-{: .fs-6 .fw-300 }
+A GitHub Action that turns prompts into Pull Requests using LLMs. {: .fs-6
+.fw-300 }
 
 Point it at files, describe what to fix, and get an automated PR. {: .fs-5
 .fw-300 }
@@ -22,7 +22,7 @@ Point it at files, describe what to fix, and get an automated PR. {: .fs-5
 ## What is Prompt2PR?
 
 Prompt2PR is a GitHub Action that automates code changes using Large Language
-Models. You write a prompt in plain English, point it at your codebase, and it:
+Models. You write a prompt, point it at your codebase, and it:
 
 1. **Scans** your files based on glob patterns
 2. **Sends** your prompt + file contents to an LLM provider
