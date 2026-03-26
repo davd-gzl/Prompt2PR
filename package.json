@@ -45,7 +45,7 @@
     "@actions/exec": "^1.1.1",
     "@actions/github": "^6.0.0",
     "@actions/glob": "^0.6.1",
-    "picomatch": "4.0.3"
+    "picomatch": "4.0.4"
   },
   "devDependencies": {
     "@eslint/compat": "^1.4.0",
